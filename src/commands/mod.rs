@@ -11,7 +11,7 @@
 use std::collections::HashMap;
 use crate::Scanner;
 
-mod exit;
+pub mod exit;
 
 /// Command handler type
 ///
@@ -49,17 +49,26 @@ type HandlerMapping = (&'static [&'static str], CommandHandler);
 /// emitted by the linker.
 #[macro_export]
 macro_rules! register_command_handler {
-    ([$($cmd:literal),+], $func:ident) => {
-        const _: () = {
+    ($func:ident, [$($cmd:literal),+], $desc:literal, $args_doc:literal) => {
+        #[doc = concat!(
+            "Command handler for: ",
+            $( "`", $cmd, "`", ", " ),+,
+            "\n## Description\n",
+            $desc,
+            "\n## Arguments\n",
+            $args_doc
+        )]
+        #[allow(non_upper_case_globals)]
+        #[used]
+        #[unsafe(link_section = ".command_handlers")]
+        pub static HANDLER: &$crate::commands::HandlerMapping = {
             static CMD: &[&str] = &[$($cmd),+];
             static HANDLER: $crate::commands::HandlerMapping = (CMD, $func);
-
-            #[used]
-            #[unsafe(link_section = ".command_handlers")]
-            static HANDLER_REF: &$crate::commands::HandlerMapping = &HANDLER;
+            &HANDLER
         };
-    }
+    };
 }
+
 
 unsafe extern "Rust" {
     static __start_command_handlers: *const &'static HandlerMapping;

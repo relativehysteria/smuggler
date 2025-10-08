@@ -44,6 +44,7 @@ impl Cli {
 
         // Initialize the command handler registry
         let commands = get_command_handlers();
+        // println!("{commands:?}");
 
         // Create the scanner
         let scanner = Scanner::new();

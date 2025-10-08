@@ -1,19 +1,22 @@
+//! Safe wrapper around `process_vm_readv()` for reading memory from a remote
+//! process
+
 use crate::Pid;
 use crate::proc_maps::Region;
 
-/// Memory region for I/O operations
+/// Represents a contiguous memory region for I/O
 #[derive(Debug)]
 #[repr(C)]
 pub struct IoVec {
-    /// Starting address
+    /// Start address of the region
     pub base: usize,
 
-    /// Size of the memory region
+    /// Length of the memory region in byte
     pub len: usize,
 }
 
 impl IoVec {
-    /// Constructs a new IoVec
+    /// Constructs a new [`IoVec`] with the given base address and length
     pub fn new(base: usize, len: usize) -> Self {
         Self { base, len }
     }
@@ -30,7 +33,8 @@ unsafe extern "C" {
     ) -> isize;
 }
 
-/// Populate the memory `regions` with their raw memory bytes
+/// Reads the raw memory of each region in `regions` and populates them with the
+/// data
 pub fn populate_regions(pid: Pid, regions: &mut [Region]) {
     // Create remote iovecs for the regions
     let remote: Vec<IoVec> = regions.iter()
@@ -46,17 +50,16 @@ pub fn populate_regions(pid: Pid, regions: &mut [Region]) {
         .for_each(|(region, memory)| region.memory = memory);
 }
 
-/// Read the following iovectors into memory
+/// Reads memory from the specified `remote` iovecs into local buffers.
 ///
-/// The mapping between local and remote iovecs is 1:1. That is, each remote
-/// iovec will be written to a same sized local iovec
+/// Each remote iovec maps 1:1 to a local buffer of the same size.
 ///
-/// If a memory region is invalid, it is completely skipped and another syscall
-/// is issued for the remaining valid regions
+/// If a region is invalid, it’s skipped, and the function retries with
+/// the remaining valid regions.
 fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
     assert!(remote.len() > 0);
 
-    // First, create the vectors backing up the local memory
+    // Allocate local buffers matching each remote region
     let mut backing_vecs: Vec<Vec<u8>> = remote.iter()
         .map(|remote_iovec| Vec::with_capacity(remote_iovec.len))
         .collect();
@@ -66,11 +69,9 @@ fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
         .map(|vec| IoVec::new(vec.as_mut_ptr() as usize, vec.capacity()))
         .collect();
 
-    // XXX: FROM WHAT I UNDERSTAND FROM THE IMPLICIT MANPAGE AND REFUSE TO TEST:
-    // If the first remote iovec is immediately invalid, EFAULT is returned
-    // instead of bytes read. If any other iovec becomes invalid during the
-    // call, bytes read is returned instead. So simply keep reading until we
-    // reach the last remote iovec
+    // NOTE: If the first remote iovec is invalid, `process_vm_readv` returns
+    // `EFAULT` immediately. If a later one is invalid, it returns the number
+    // of bytes read so far. We retry until all regions are processed.
 
     // Get the total bytes that have yet to be read
     let mut to_read = backing_vecs.iter()

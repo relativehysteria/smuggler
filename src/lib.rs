@@ -17,10 +17,10 @@ pub enum Error {
     ZeroPid,
 
     /// An error returned by [`rustyline`]
-    CliError(rustyline::error::ReadlineError),
+    Cli(rustyline::error::ReadlineError),
 
     /// A generic I/O error
-    IoError(std::io::Error),
+    Io(std::io::Error),
 }
 
 /// System process ID

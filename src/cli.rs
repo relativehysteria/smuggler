@@ -24,13 +24,13 @@ impl Cli {
 
         // Create the editor
         let config = Config::builder()
-            .max_history_size(0xFFFF).map_err(Error::CliError)?
+            .max_history_size(0xFFFF).map_err(Error::Cli)?
             .auto_add_history(true)
             .tab_stop(4)
             .indent_size(4)
             .build();
 
-        let mut rl = Editor::with_config(config).map_err(Error::CliError)?;
+        let mut rl = Editor::with_config(config).map_err(Error::Cli)?;
 
         // Load history if possible
         let _ = rl.load_history(history_file.as_str());
@@ -42,7 +42,7 @@ impl Cli {
     pub fn next_command(&mut self) -> crate::Result<String> {
         // Get the command
         let cmd = self.rl.readline(self.prompt.as_str())
-            .map_err(Error::CliError);
+            .map_err(Error::Cli);
 
         // Save if valid
         if cmd.is_ok() {
@@ -50,5 +50,26 @@ impl Cli {
         }
 
         cmd
+    }
+
+    /// The main loop of the application!
+    pub fn main_loop(&mut self) -> crate::Result<()> {
+        loop {
+            // Get the next command and its arguments
+            let cmd_line = self.next_command()?;
+            let cmd_line: Vec<String> = cmd_line
+                .split_whitespace()
+                .map(|word| word.to_lowercase())
+                .collect();
+
+            // If no command was given, go next
+            if cmd_line.len() == 0 { continue; }
+
+            // Get the specific command that was called
+            match cmd_line[0].as_str() {
+                "exit" => return Ok(()),
+                _ => println!("Unknown command"),
+            }
+        }
     }
 }

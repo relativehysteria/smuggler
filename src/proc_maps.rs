@@ -103,7 +103,7 @@ impl Maps {
         F: FnMut(&Region) -> bool,
     {
         let file = format!("/proc/{}/maps", pid.0);
-        let maps = std::fs::read_to_string(file).map_err(Error::IoError)?
+        let maps = std::fs::read_to_string(file).map_err(Error::Io)?
             .lines()
             .filter_map(Region::from_line)
             .filter(filter)

@@ -1,9 +1,6 @@
 //! /proc/pid/maps parser and stuff
 
-// TODO:
-// * Range doesn't actually do mathematical set logic
-// * Use errors instead of options
-// * More robust permission parsing
+use crate::{Error, Pid};
 
 /// Memory permissions
 #[derive(Debug, Clone)]
@@ -35,7 +32,7 @@ impl Permissions {
 }
 
 
-/// Represents a region of memory in `/proc/pid/maps`
+/// A region of memory in `/proc/pid/maps`
 #[derive(Debug, Clone)]
 pub struct Region {
     /// The address range
@@ -89,28 +86,28 @@ impl Region {
 }
 
 
-/// Represents regions in `/proc/pid/maps`
+/// Regions in `/proc/pid/maps`
 #[derive(Debug, Clone)]
 pub struct Maps(pub Vec<Region>);
 
 impl Maps {
     /// Parse memory regions for `pid` and retain those passing the `filter`
-    pub fn regions<F>(pid: u32, filter: F) -> Option<Self>
+    pub fn regions<F>(pid: Pid, filter: F) -> crate::Result<Self>
     where
         F: FnMut(&Region) -> bool,
     {
-        let file = format!("/proc/{}/maps", pid);
-        let maps = std::fs::read_to_string(file).ok()?
+        let file = format!("/proc/{}/maps", pid.0);
+        let maps = std::fs::read_to_string(file).map_err(Error::IoError)?
             .lines()
             .filter_map(Region::from_line)
             .filter(filter)
             .collect();
 
-        Some(Self(maps))
+        Ok(Self(maps))
     }
 
     /// Parse memory regions for `pid` and retain only the read-writeable ones
-    pub fn rw_regions(pid: u32) -> Option<Self> {
+    pub fn rw_regions(pid: Pid) -> crate::Result<Self> {
         Self::regions(pid, |reg| reg.perms.read && reg.perms.write)
     }
 }

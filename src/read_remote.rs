@@ -80,7 +80,7 @@ fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
 
     'read: loop {
         // Attempt to read the memory into the local buffers
-        let mut just_read = unsafe {
+        let just_read = unsafe {
             process_vm_readv(
                 pid,
                 local[current_idx..].as_ptr(),
@@ -108,7 +108,7 @@ fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
         let mut just_read = just_read as usize;
 
         // We got a read!
-        for (i, mut vec) in backing_vecs[current_idx..].iter_mut().enumerate() {
+        for (i, vec) in backing_vecs[current_idx..].iter_mut().enumerate() {
             // Take note of how many more bytes we have to read
             let cap = vec.capacity();
             to_read -= cap;

@@ -4,18 +4,18 @@ use crate::{Error, Pid};
 
 /// Memory permissions
 #[derive(Debug, Clone)]
-struct Permissions {
+pub struct Permissions {
     /// Whether the memory is readable
-    read: bool,
+    pub read: bool,
 
     /// Whether the memory is writeable
-    write: bool,
+    pub write: bool,
 
     /// Whether the memory is executable
-    execute: bool,
+    pub execute: bool,
 
     /// Whether the memory shared or private (copy on write)
-    shared: bool,
+    pub shared: bool,
 }
 
 impl Permissions {

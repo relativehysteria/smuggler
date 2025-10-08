@@ -1,5 +1,3 @@
-use rustyline::Editor;
-use rustyline::history::FileHistory;
 use smug::{Pid, cli::Cli};
 
 fn main() -> smug::Result<()> {

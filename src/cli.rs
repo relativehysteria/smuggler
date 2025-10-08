@@ -84,7 +84,7 @@ impl Cli {
             match self.commands.get(&cmd_line[0]) {
                 None => println!("Unknown command"),
                 Some(handler) => {
-                    let ret = handler(&mut self.scanner, &cmd_line[1..]);
+                    let ret = handler(&mut self.scanner, cmd_line);
                     println!("{ret}");
                 }
             }

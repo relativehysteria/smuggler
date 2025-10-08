@@ -1,5 +1,3 @@
-//! Exits the application
-
 crate::register_command_handler!(
     handler, ["exit", "quit"],
     "Exits the application immediately.",

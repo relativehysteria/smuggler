@@ -11,7 +11,21 @@
 use std::collections::HashMap;
 use crate::Scanner;
 
-pub mod exit;
+
+// COMMAND REGISTRATION ────────────────────────────────────────────────────────
+// Things are imported using this macro to automatically expose command
+// documentation in `cargo doc`
+
+macro_rules! import_command {
+    ($name:ident) => {
+        mod $name;
+        pub use $name::HANDLER as $name;
+    };
+}
+
+import_command!(exit);
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 /// Command handler type
 ///
@@ -58,7 +72,6 @@ macro_rules! register_command_handler {
             "\n## Arguments\n",
             $args_doc
         )]
-        #[allow(non_upper_case_globals)]
         #[used]
         #[unsafe(link_section = ".command_handlers")]
         pub static HANDLER: &$crate::commands::HandlerMapping = {

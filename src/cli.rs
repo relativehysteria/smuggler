@@ -1,7 +1,8 @@
 //! Command line interface
 
 use rustyline::{Editor, history::FileHistory, config::Config};
-use crate::{Pid, Error};
+use crate::{Pid, Error, Scanner};
+use crate::commands::{CommandHandler, get_command_handlers};
 
 /// Handler for the interface
 #[derive(Debug)]
@@ -12,8 +13,14 @@ pub struct Cli {
     /// The file where history will be saved
     history_file: String,
 
-    /// The prompt for each command
+    /// The prompt that appears on the command line
     prompt: String,
+
+    /// The internal scanner state
+    scanner: Scanner,
+
+    /// A mapping of string commands to their handlers
+    commands: std::collections::HashMap<String, CommandHandler>,
 }
 
 impl Cli {
@@ -35,7 +42,13 @@ impl Cli {
         // Load history if possible
         let _ = rl.load_history(history_file.as_str());
 
-        Ok(Self { rl, history_file, prompt })
+        // Initialize the command handler registry
+        let commands = get_command_handlers();
+
+        // Create the scanner
+        let scanner = Scanner::new();
+
+        Ok(Self { rl, history_file, prompt, commands, scanner })
     }
 
     /// Get the next command, saving it to the history file if valid
@@ -54,6 +67,7 @@ impl Cli {
 
     /// The main loop of the application!
     pub fn main_loop(&mut self) -> crate::Result<()> {
+        // TODO: only save actual successful commands, not everything
         loop {
             // Get the next command and its arguments
             let cmd_line = self.next_command()?;
@@ -65,10 +79,13 @@ impl Cli {
             // If no command was given, go next
             if cmd_line.len() == 0 { continue; }
 
-            // Get the specific command that was called
-            match cmd_line[0].as_str() {
-                "exit" => return Ok(()),
-                _ => println!("Unknown command"),
+            // Attempt to get a handler for this command
+            match self.commands.get(&cmd_line[0]) {
+                None => println!("Unknown command"),
+                Some(handler) => {
+                    let ret = handler(&mut self.scanner, &cmd_line[1..]);
+                    println!("{ret}");
+                }
             }
         }
     }

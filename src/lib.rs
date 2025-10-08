@@ -3,6 +3,11 @@ use core::num::NonZero;
 pub mod proc_maps;
 pub mod cli;
 pub mod read_remote;
+mod scanner;
+pub use scanner::Scanner;
+
+#[macro_use]
+pub mod commands;
 
 /// Wrapper around [`std::result::Result`] for this application
 pub type Result<T> = std::result::Result<T, Error>;

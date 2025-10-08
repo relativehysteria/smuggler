@@ -2,6 +2,7 @@ use crate::Pid;
 use crate::proc_maps::Region;
 
 /// Memory region for I/O operations
+#[derive(Debug)]
 #[repr(C)]
 pub struct IoVec {
     /// Starting address
@@ -73,14 +74,14 @@ fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
 
     // Get the total bytes that have yet to be read
     let mut to_read = backing_vecs.iter()
-        .fold(0, |acc, vec| acc + vec.capacity());
+        .fold(0usize, |acc, vec| acc + vec.capacity());
 
     // Index to track valid iovectors
     let mut current_idx = 0;
 
     'read: loop {
         // Attempt to read the memory into the local buffers
-        let just_read = unsafe {
+        let just_read: isize = unsafe {
             process_vm_readv(
                 pid,
                 local[current_idx..].as_ptr(),
@@ -97,11 +98,7 @@ fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
             current_idx += 1;
 
             // If this iovec is also the last, stop, otherwise continue reading
-            if current_idx == remote.len() {
-                break;
-            } else {
-                continue;
-            }
+            if current_idx == remote.len() { break; } else { continue; }
         }
 
         // Cast just_read to usize as this is now guaranteed positive
@@ -113,13 +110,14 @@ fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
             let cap = vec.capacity();
             to_read -= cap;
 
+            // Update the current index to the iovecs for the next call
+            current_idx += 1;
+
             // If there's no more bytes to read, this is the last iovec
             if to_read == 0 {
                 // If we read enough to fill it, set its length. Otherwise this
                 // is an incomplete read so the iovec is invalid and skipped
-                if just_read == cap {
-                    unsafe { vec.set_len(cap); }
-                }
+                if just_read == cap { unsafe { vec.set_len(cap); } }
                 break 'read;
             }
 
@@ -132,10 +130,8 @@ fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
                 continue;
             }
 
-            // Incomplete read. simply skip this iovec and go to the next one.
-            // By keeping its length at 0 we'll be able to later drop it and
-            // replace it with `None`
-            current_idx = i + 1;
+            // This iovec caused an incomplete read. `current_idx` already
+            // points past it, so it will be skipped on the next call
             break;
         }
     }

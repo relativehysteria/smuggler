@@ -62,6 +62,9 @@ impl Region {
             end: usize::from_str_radix(addr.next()?, 16).ok()?,
         };
 
+        // If the length is 0, skip it
+        if addr.start == addr.end { return None; }
+
         // Get the persmissions
         let perms = Permissions::from_str(splits.next()?)?;
 

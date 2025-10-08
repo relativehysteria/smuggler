@@ -1,4 +1,5 @@
 use crate::Pid;
+use crate::proc_maps::Region;
 
 /// Memory region for I/O operations
 #[repr(C)]
@@ -28,6 +29,22 @@ unsafe extern "C" {
     ) -> isize;
 }
 
+/// Populate the memory `regions` with their raw memory bytes
+pub fn populate_regions(pid: Pid, regions: &mut [Region]) {
+    // Create remote iovecs for the regions
+    let remote: Vec<IoVec> = regions.iter()
+        .map(|r| IoVec::new(r.addr().start, r.addr().end - r.addr().start))
+        .collect();
+
+    // Read the memory regions
+    let memory_regions = remote_readv(pid, &remote);
+
+    // Populate the memory pointers in the regions
+    regions.iter_mut()
+        .zip(memory_regions.into_iter())
+        .for_each(|(region, memory)| region.memory = memory);
+}
+
 /// Read the following iovectors into memory
 ///
 /// The mapping between local and remote iovecs is 1:1. That is, each remote
@@ -35,7 +52,7 @@ unsafe extern "C" {
 ///
 /// If a memory region is invalid, it is completely skipped and another syscall
 /// is issued for the remaining valid regions
-pub fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
+fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
     assert!(remote.len() > 0);
 
     // First, create the vectors backing up the local memory

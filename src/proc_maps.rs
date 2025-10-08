@@ -44,6 +44,9 @@ pub struct Region {
     /// The pathname of the file backing the mapping. Includes pseudo-paths
     /// (like `[stack]` etc.)
     path: Option<String>,
+
+    /// The raw memory of this region
+    pub memory: Option<Vec<u8>>,
 }
 
 impl Region {
@@ -66,21 +69,21 @@ impl Region {
         let path = splits.nth(3).map(str::to_string);
 
         // Return the parsed memory region
-        Some(Self { addr, perms, path })
+        Some(Self { addr, perms, path, memory: None })
     }
 
     /// Get the address range for this region
-    fn addr(&self) -> &core::ops::Range<usize> {
+    pub fn addr(&self) -> &core::ops::Range<usize> {
         &self.addr
     }
 
     /// Get the permissions for this region
-    fn permissions(&self) -> &Permissions {
+    pub fn permissions(&self) -> &Permissions {
         &self.perms
     }
 
     /// Get the backing file path or pseudo-path for this region
-    fn path(&self) -> Option<&str> {
+    pub fn path(&self) -> Option<&str> {
         self.path.as_deref()
     }
 }

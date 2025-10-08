@@ -4,7 +4,7 @@ pub mod proc_maps;
 pub mod cli;
 pub mod read_remote;
 
-/// Wrapper for `Result`
+/// Wrapper around [`std::result::Result`] for this application
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Generic error type for this application

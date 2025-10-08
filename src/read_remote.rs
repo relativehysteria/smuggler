@@ -1,4 +1,4 @@
-//! Safe wrapper around `process_vm_readv()` for reading memory from a remote
+//! Safe wrapper around [`process_vm_readv()`] for reading memory from a remote
 //! process
 
 use crate::Pid;
@@ -23,7 +23,8 @@ impl IoVec {
 }
 
 unsafe extern "C" {
-    fn process_vm_readv(
+    /// The raw `process_vm_readv()` syscall
+    pub fn process_vm_readv(
         pid:          Pid,
         local:        *const IoVec,
         local_count:  usize,
@@ -106,7 +107,7 @@ fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
         let mut just_read = just_read as usize;
 
         // We got a read!
-        for (i, vec) in backing_vecs[current_idx..].iter_mut().enumerate() {
+        for vec in backing_vecs[current_idx..].iter_mut() {
             // Take note of how many more bytes we have to read
             let cap = vec.capacity();
             to_read -= cap;

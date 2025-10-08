@@ -1,4 +1,4 @@
-//! /proc/pid/maps parser and stuff
+//! `/proc/pid/maps` parser and stuff
 
 use crate::{Error, Pid};
 

@@ -3,11 +3,11 @@
 #![allow(unused)]
 
 mod value;
-use value::*;
+pub use value::*;
 mod int;
-use int::*;
+pub use int::*;
 mod constraint;
-use constraint::*;
+pub use constraint::*;
 
 /// Errors encountered in these libraries
 #[derive(Debug)]

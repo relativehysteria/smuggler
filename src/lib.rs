@@ -2,16 +2,14 @@
 
 use core::num::NonZero;
 
-pub mod proc_maps;
-pub use proc_maps::Maps;
-
+#[macro_use] pub mod commands;
+#[macro_use] pub mod num;
 pub mod cli;
 pub mod read_remote;
+pub mod proc_maps;
+pub use proc_maps::Maps;
 mod scanner;
 pub use scanner::Scanner;
-
-#[macro_use]
-pub mod commands;
 
 /// Wrapper around [`std::result::Result`] for this application
 pub type Result<T> = std::result::Result<T, Error>;
@@ -30,6 +28,15 @@ pub enum Error {
 
     /// A generic I/O error
     Io(std::io::Error),
+
+    /// Error returned by the `num` module
+    Num(crate::num::Error),
+}
+
+impl From<num::Error> for Error {
+    fn from(val: num::Error) -> Self {
+        Self::Num(val)
+    }
 }
 
 /// System process ID

@@ -54,12 +54,6 @@ type HandlerMapping = (&'static [&'static str], CommandHandler);
 /// This macro takes a list of command strings and a function name,
 /// and places a reference to the handler in a custom linker section.
 ///
-/// ## How it works:
-/// - It creates a static array of command strings.
-/// - It creates a `HandlerMapping` pairing the command array and the function.
-/// - It then places a **reference** to that mapping in a special section of the
-///   binary (`.command_handlers`) using `#[link_section]`.
-///
 /// These references are gathered at runtime using start/end symbols
 /// emitted by the linker.
 #[macro_export]

@@ -57,39 +57,35 @@ impl Cli {
 
     /// Get the next command, saving it to the history file if valid
     pub fn next_command(&mut self) -> crate::Result<String> {
-        // Get the command
-        let cmd = self.rl.readline(self.prompt.as_str())
-            .map_err(Error::Cli);
-
-        // Save if valid
-        if cmd.is_ok() {
-            let _ = self.rl.save_history(self.history_file.as_str());
-        }
-
-        cmd
+        let cmd = self.rl.readline(self.prompt.as_str()).map_err(Error::Cli)?;
+        let _ = self.rl.save_history(self.history_file.as_str());
+        Ok(cmd)
     }
 
     /// The main loop of the application!
     pub fn main_loop(&mut self) -> crate::Result<()> {
-        // TODO: only save actual successful commands, not everything
         loop {
-            // Get the next command and its arguments
-            let cmd_line = self.next_command()?;
-            let cmd_line: Vec<String> = cmd_line
+            // Get the next command
+            let line = self.next_command()?;
+
+            // Split it into substrings
+            let cmd: Vec<String> = line
                 .split_whitespace()
-                .map(|word| word.to_lowercase())
+                .map(|word| word.to_string())
                 .collect();
 
             // If no command was given, go next
-            if cmd_line.len() == 0 { continue; }
+            if cmd.len() == 0 { continue; }
 
-            // Attempt to get a handler for this command
-            match self.commands.get(&cmd_line[0]) {
-                None => println!("Unknown command"),
-                Some(handler) => {
-                    let ret = handler(&mut self.scanner, &cmd_line);
-                    println!("{ret}");
+            // Try to get a handler for this command
+            if let Some(handler) = self.commands.get(&cmd[0]) {
+                // Save command to history if execution is successful
+                match handler(&mut self.scanner, &cmd) {
+                    Ok(out) => println!("{out}"),
+                    Err(e)  => println!("!!! {e}"),
                 }
+            } else {
+                println!("Unknown command!");
             }
         }
     }

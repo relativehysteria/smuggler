@@ -11,6 +11,8 @@
 use std::collections::HashMap;
 use crate::Scanner;
 
+/// Wrapper around [`std::result::Result`] for commands
+pub type Result = std::result::Result<String, String>;
 
 // COMMAND REGISTRATION ────────────────────────────────────────────────────────
 // Things are imported using this macro to automatically expose command
@@ -25,6 +27,7 @@ macro_rules! import_command {
 
 import_command!(exit);
 import_command!(maps);
+import_command!(display);
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -32,7 +35,9 @@ import_command!(maps);
 ///
 /// A command will be given the scanner state and a list of arguments that it
 /// can then handle.
-pub type CommandHandler = fn(&mut Scanner, &[String]) -> String;
+///
+/// If it's given valid arguments, the command must
+pub type CommandHandler = fn(&mut Scanner, &[String]) -> Result;
 
 /// A single command handler registration entry
 ///

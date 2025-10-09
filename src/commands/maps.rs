@@ -4,13 +4,13 @@ crate::register_command_handler!(
     "Takes no arguments."
 );
 
-fn handler(scanner: &mut crate::Scanner, _: &[String]) -> String {
-    crate::Maps::rw_regions(scanner.pid())
+fn handler(s: &mut crate::Scanner, _: &[String]) -> crate::commands::Result {
+    Ok(crate::Maps::rw_regions(s.pid())
         .map(|maps| {
             maps.0.into_iter()
             .map(|region| format!("{}", region))
             .intersperse("\n".to_string())
             .collect()
         })
-    .unwrap_or_else(|e| format!("Couldn't parse maps: {:?}", e))
+    .unwrap_or_else(|e| format!("Couldn't parse maps: {:?}", e)))
 }

@@ -54,11 +54,6 @@ type HandlerMapping = (&'static [&'static str], CommandHandler);
 /// This macro takes a list of command strings and a function name,
 /// and places a reference to the handler in a custom linker section.
 ///
-/// # Example
-/// ```rust
-/// register_command_handler!(["help", "h"], handle_help_command);
-/// ```
-///
 /// ## How it works:
 /// - It creates a static array of command strings.
 /// - It creates a `HandlerMapping` pairing the command array and the function.

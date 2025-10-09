@@ -1,5 +1,5 @@
 crate::register_command_handler!(
-    handler, ["exit", "quit"],
+    handler, ["exit", "quit", "q"],
     "Exits the application immediately.",
     "Takes no arguments."
 );

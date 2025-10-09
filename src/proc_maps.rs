@@ -1,5 +1,6 @@
 //! `/proc/pid/maps` parser and stuff
 
+use std::fmt;
 use crate::{Error, Pid};
 
 /// Memory permissions
@@ -31,6 +32,15 @@ impl Permissions {
     }
 }
 
+impl fmt::Display for Permissions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}{}{}",
+            if self.read    { 'r' } else { '-' },
+            if self.write   { 'w' } else { '-' },
+            if self.execute { 'x' } else { '-' },
+            if self.shared  { 's' } else { 'p' })
+    }
+}
 
 /// A region of memory in `/proc/pid/maps`
 #[derive(Debug, Clone)]
@@ -81,7 +91,7 @@ impl Region {
     }
 
     /// Get the permissions for this region
-    pub fn permissions(&self) -> &Permissions {
+    pub fn perms(&self) -> &Permissions {
         &self.perms
     }
 
@@ -91,19 +101,42 @@ impl Region {
     }
 }
 
+impl fmt::Display for Region {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "0x{:<014X?} | 0x{:<9X} {} {}",
+            self.addr,
+            self.addr.end - self.addr.start,
+            self.perms,
+            match &self.path {
+                None => "",
+                Some(p) => &p,
+            }
+        )
+    }
+}
 
 /// Regions in `/proc/pid/maps`
 #[derive(Debug, Clone)]
 pub struct Maps(pub Vec<Region>);
 
 impl Maps {
+    /// Get path to the maps file
+    fn path(pid: Pid) -> String {
+        format!("/proc/{}/maps", pid.0)
+    }
+
+    /// Check whether the maps file is accessible
+    pub fn accessible(pid: Pid) -> crate::Result<()> {
+        let _ = std::fs::File::open(Self::path(pid)).map_err(Error::Io)?;
+        Ok(())
+    }
+
     /// Parse memory regions for `pid` and retain those passing the `filter`
     pub fn regions<F>(pid: Pid, filter: F) -> crate::Result<Self>
     where
         F: FnMut(&Region) -> bool,
     {
-        let file = format!("/proc/{}/maps", pid.0);
-        let maps = std::fs::read_to_string(file).map_err(Error::Io)?
+        let maps = std::fs::read_to_string(Self::path(pid)).map_err(Error::Io)?
             .lines()
             .filter_map(Region::from_line)
             .filter(filter)

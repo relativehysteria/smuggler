@@ -1,6 +1,10 @@
+#![feature(iter_intersperse)]
+
 use core::num::NonZero;
 
 pub mod proc_maps;
+pub use proc_maps::Maps;
+
 pub mod cli;
 pub mod read_remote;
 mod scanner;

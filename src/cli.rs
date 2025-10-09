@@ -26,6 +26,9 @@ pub struct Cli {
 impl Cli {
     /// Create a new scanner interface for the following PID
     pub fn new(pid: Pid, prompt: String) -> crate::Result<Self> {
+        // Make sure the maps file is accessible
+        let _ = crate::Maps::accessible(pid)?;
+
         // Save the history file path
         let history_file = format!("/tmp/smug_{}", pid.0);
 
@@ -47,7 +50,7 @@ impl Cli {
         // println!("{commands:?}");
 
         // Create the scanner
-        let scanner = Scanner::new();
+        let scanner = Scanner::new(pid);
 
         Ok(Self { rl, history_file, prompt, commands, scanner })
     }
@@ -84,7 +87,7 @@ impl Cli {
             match self.commands.get(&cmd_line[0]) {
                 None => println!("Unknown command"),
                 Some(handler) => {
-                    let ret = handler(&mut self.scanner, cmd_line);
+                    let ret = handler(&mut self.scanner, &cmd_line);
                     println!("{ret}");
                 }
             }

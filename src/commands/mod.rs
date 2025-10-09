@@ -24,6 +24,7 @@ macro_rules! import_command {
 }
 
 import_command!(exit);
+import_command!(maps);
 
 // ─────────────────────────────────────────────────────────────────────────────
 

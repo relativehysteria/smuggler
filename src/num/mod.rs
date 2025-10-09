@@ -1,3 +1,5 @@
+//! Stuff for working with number stuff
+
 #![allow(unused)]
 
 mod value;

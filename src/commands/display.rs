@@ -1,5 +1,6 @@
 use core::num::NonZero;
 use crate::remote;
+use crate::commands::parse_arg;
 
 crate::register_command_handler!(
     handler, ["db", "dw", "dd", "dq", "dB", "dW", "dD", "dQ", "df", "dF"],
@@ -22,13 +23,11 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
         .ok_or("Missing or invalid type specifier")?;
 
     // Parse the address
-    let addr_str = args.get(1).ok_or("Address missing")?;
-    let addr = crate::num::parse_u64(addr_str)
-        .map_err(|e| format!("Address not a valid number: {e:?}"))?;
+    let addr = parse_arg::<u64>(args.get(1), "Start address")?;
 
     // Parse the length
     let len = args.get(2)
-        .map(|s| crate::num::parse_usize(s)
+        .map(|s| crate::num::parse::<usize>(s)
             .map_err(|e| format!("Length not a valid number: {:?}", e)))
         .transpose()?
         .unwrap_or(0x40);

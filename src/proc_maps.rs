@@ -1,7 +1,9 @@
 //! `/proc/pid/maps` parser and stuff
 
+use core::num::NonZero;
+use core::ops::Range;
 use std::fmt;
-use crate::{Error, Pid};
+use crate::{Error, Pid, remote::IoVec};
 
 /// Memory permissions
 #[derive(Debug, Clone)]
@@ -46,17 +48,14 @@ impl fmt::Display for Permissions {
 #[derive(Debug, Clone)]
 pub struct Region {
     /// The address range
-    addr: core::ops::Range<u64>,
+    pub addr: Range<u64>,
 
     /// The memory permissions
-    perms: Permissions,
+    pub perms: Permissions,
 
     /// The pathname of the file backing the mapping. Includes pseudo-paths
     /// (like `[stack]` etc.)
-    path: Option<String>,
-
-    /// The raw memory of this region
-    pub memory: Option<Vec<u8>>,
+    pub path: Option<String>,
 }
 
 impl Region {
@@ -67,7 +66,7 @@ impl Region {
 
         // Get the address range for this region
         let mut addr = splits.next()?.split('-');
-        let addr = core::ops::Range {
+        let addr = Range {
             start: u64::from_str_radix(addr.next()?, 16).ok()?,
             end: u64::from_str_radix(addr.next()?, 16).ok()?,
         };
@@ -82,22 +81,7 @@ impl Region {
         let path = splits.nth(3).map(str::to_string);
 
         // Return the parsed memory region
-        Some(Self { addr, perms, path, memory: None })
-    }
-
-    /// Get the address range for this region
-    pub fn addr(&self) -> &core::ops::Range<u64> {
-        &self.addr
-    }
-
-    /// Get the permissions for this region
-    pub fn perms(&self) -> &Permissions {
-        &self.perms
-    }
-
-    /// Get the backing file path or pseudo-path for this region
-    pub fn path(&self) -> Option<&str> {
-        self.path.as_deref()
+        Some(Self { addr, perms, path })
     }
 }
 
@@ -149,4 +133,93 @@ impl Maps {
     pub fn rw_regions(pid: Pid) -> crate::Result<Self> {
         Self::regions(pid, |reg| reg.perms.read && reg.perms.write)
     }
+
+    /// Returns an iterator over groups of IoVecs, where each group fits within
+    /// `chunk_size` bytes and lies within `range`.
+    pub fn chunks(self, chunk_size: usize, range: Range<u64>)
+            -> impl Iterator<Item = Vec<IoVec>> {
+        let mut regions: Vec<Range<u64>> = self.0.into_iter()
+            .map(|r| {
+                let start = r.addr.start.max(range.start);
+                let end = r.addr.end.min(range.end);
+                start..end
+            })
+            .filter(|r| r.start < r.end)
+            .collect();
+
+        // The actual iterator
+        std::iter::from_fn(move || {
+            let mut batch = Vec::new();
+            let mut remaining = chunk_size as u64;
+
+            while let Some(region) = regions.first_mut() {
+                let region_len = region.end - region.start;
+                if region_len == 0 {
+                    regions.remove(0);
+                    continue;
+                }
+
+                if region_len <= remaining {
+                    // Entire region fits in current chunk
+                    let len_nz = NonZero::new(region_len as usize)?;
+                    batch.push(IoVec::new(region.start, len_nz));
+                    remaining -= region_len;
+                    regions.remove(0);
+                } else {
+                    // Split region: take partial chunk
+                    let take_len = remaining.min(region_len);
+                    let len_nz = NonZero::new(take_len as usize)?;
+                    batch.push(IoVec::new(region.start, len_nz));
+
+                    // Advance region start for next iteration
+                    region.start += take_len;
+                    remaining = 0;
+                }
+
+                if remaining == 0 {
+                    break;
+                }
+            }
+
+            if batch.is_empty() {
+                None
+            } else {
+                Some(batch)
+            }
+        })
+    }
+
+//    /// Returns iovecs for all memory regions within `range`. Each iovec will
+//    /// have length at most equal to `chunk_size`
+//    pub fn chunks(self, chunk_size: usize, range: Range<u64>) -> Vec<IoVec> {
+//        let mut result = Vec::new();
+//
+//        for region in self.0 {
+//            let reg = region.addr;
+//
+//            // Compute intersection of region and range
+//            let start = reg.start.max(range.start);
+//            let end   = reg.end.max(range.end);
+//
+//            // Skip if no overlap
+//            if start >= end { continue; }
+//
+//            // Now chunk it up
+//            let mut cur = start;
+//            while cur < end {
+//                let remaining = end - cur;
+//
+//                let len: usize = remaining.min(chunk_size as u64)
+//                    .try_into().expect("u64 can't fit into usize");
+//
+//                if let Some(len) = NonZero::new(len) {
+//                    result.push(IoVec::new(cur, len));
+//                }
+//
+//                cur += len as u64;
+//            }
+//        }
+//
+//        result
+//    }
 }

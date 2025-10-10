@@ -11,9 +11,6 @@
 use std::collections::HashMap;
 use crate::Scanner;
 
-/// Wrapper around [`std::result::Result`] for commands
-pub type Result = std::result::Result<(), String>;
-
 // COMMAND REGISTRATION ────────────────────────────────────────────────────────
 // Things are imported using this macro to automatically expose command
 // documentation in `cargo doc`
@@ -28,8 +25,12 @@ macro_rules! import_command {
 import_command!(exit);
 import_command!(maps);
 import_command!(display);
+import_command!(string_search);
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Wrapper around [`std::result::Result`] for commands
+pub type Result = std::result::Result<(), String>;
 
 /// Command handler type
 ///
@@ -110,4 +111,13 @@ pub fn get_command_handlers() -> HashMap<String, CommandHandler> {
         }
     }
     map
+}
+
+/// Helper to extract a `T` from `arg` that generates nice error messages
+pub fn parse_arg<T: crate::num::ParseNumber>(arg: Option<&&str>, name: &str)
+        -> std::result::Result<T, String> {
+    arg
+        .ok_or_else(|| format!("{} missing", name))
+        .and_then(|s| crate::num::parse::<T>(&s)
+            .map_err(|e| format!("{} not a valid number: {:?}", name, e)))
 }

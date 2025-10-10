@@ -3,7 +3,6 @@
 
 use core::num::NonZero;
 use crate::Pid;
-use crate::proc_maps::Region;
 
 /// Represents a contiguous memory region for I/O
 #[derive(Debug)]
@@ -33,28 +32,6 @@ unsafe extern "C" {
         remote_count: usize,
         flags:        usize,
     ) -> isize;
-}
-
-/// Reads the raw memory of each region in `regions` and populates them with the
-/// data.
-pub fn populate_regions(pid: Pid, regions: &mut [Region]) {
-    // Create remote iovecs for the regions
-    let remote: Vec<IoVec> = regions.iter()
-        .filter_map(|r| {
-            let addr = r.addr();
-            let len = (addr.end - addr.start).try_into()
-                .expect("u64 can't fit into usize");
-            NonZero::new(len).map(|nz_len| IoVec::new(addr.start, nz_len))
-        })
-        .collect();
-
-    // Read the memory regions
-    let memory_regions = read_vecs(pid, &remote);
-
-    // Populate the memory pointers in the regions
-    regions.iter_mut()
-        .zip(memory_regions.into_iter())
-        .for_each(|(region, memory)| region.memory = memory);
 }
 
 /// Attempts to read `len` of data at `addr` from a remote process

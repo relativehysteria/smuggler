@@ -123,14 +123,14 @@ impl Value {
                     .map_err(crate::num::Error::ParseFloat)
                     .map_err(Error::Num)?;
             }
-            Self::U8 (val) => *val = parse_u8 (s)?,
-            Self::U16(val) => *val = parse_u16(s)?,
-            Self::U32(val) => *val = parse_u32(s)?,
-            Self::U64(val) => *val = parse_u64(s)?,
-            Self::I8 (val) => *val = parse_i8 (s)?,
-            Self::I16(val) => *val = parse_i16(s)?,
-            Self::I32(val) => *val = parse_i32(s)?,
-            Self::I64(val) => *val = parse_i64(s)?,
+            Self::U8 (val) => *val = parse::<u8>(s)?,
+            Self::U16(val) => *val = parse::<u16>(s)?,
+            Self::U32(val) => *val = parse::<u32>(s)?,
+            Self::U64(val) => *val = parse::<u64>(s)?,
+            Self::I8 (val) => *val = parse::<i8>(s)?,
+            Self::I16(val) => *val = parse::<i16>(s)?,
+            Self::I32(val) => *val = parse::<i32>(s)?,
+            Self::I64(val) => *val = parse::<i64>(s)?,
         }
 
         Ok(())

@@ -4,7 +4,7 @@ use crate::num::Error;
 
 macro_rules! impl_expr {
     ($name:ident, $name_int:ident, $ty:ty) => {
-        pub fn $name(s: &str) -> crate::Result<$ty> {
+        fn $name(s: &str) -> crate::Result<$ty> {
             #[derive(Clone, Copy, Debug)]
             enum Expr {
                 Add,
@@ -104,7 +104,7 @@ macro_rules! impl_expr {
 macro_rules! int_parse {
     ($name:ident, $name_int:ident, $ty:ty) => {
         /// Parse an integer with optional base override prefix
-        pub fn $name_int(mut s: &str) -> crate::Result<$ty> {
+        fn $name_int(mut s: &str) -> crate::Result<$ty> {
             // Default base
             let mut base = 16;
 
@@ -143,7 +143,7 @@ macro_rules! int_parse {
 macro_rules! uint_parse {
     ($name:ident, $name_int:ident, $ty:ty) => {
         /// Parse an integer with optional base override prefix
-        pub fn $name_int(mut s: &str) -> crate::Result<$ty> {
+        fn $name_int(mut s: &str) -> crate::Result<$ty> {
             // Default base
             let mut base = 16;
 
@@ -176,3 +176,37 @@ int_parse!(parse_i16,    parse_i16_int,   i16);
 int_parse!(parse_i32,    parse_i32_int,   i32);
 int_parse!(parse_i64,    parse_i64_int,   i64);
 int_parse!(parse_isize,  parse_isize_int, isize);
+
+/// Generic parsing facade so callers can use `parse::<T>(s)`
+/// and `parse_arg::<T>(&args, idx, "Name")`.
+pub trait ParseNumber: Sized {
+    fn parse(s: &str) -> crate::Result<Self>;
+}
+
+macro_rules! impl_parse_number {
+    ($ty:ty, $fn:ident) => {
+        impl ParseNumber for $ty {
+            fn parse(s: &str) -> crate::Result<Self> {
+                // forward to the specific parse function already generated
+                $fn(s)
+            }
+        }
+    };
+}
+
+// Implement the trait for all the generated integer types.
+impl_parse_number!(u8,    parse_u8);
+impl_parse_number!(u16,   parse_u16);
+impl_parse_number!(u32,   parse_u32);
+impl_parse_number!(u64,   parse_u64);
+impl_parse_number!(usize, parse_usize);
+impl_parse_number!(i8,    parse_i8);
+impl_parse_number!(i16,   parse_i16);
+impl_parse_number!(i32,   parse_i32);
+impl_parse_number!(i64,   parse_i64);
+impl_parse_number!(isize, parse_isize);
+
+/// Generic parse function: `crate::num::parse::<u64>("0x10")`
+pub fn parse<T: ParseNumber>(s: &str) -> crate::Result<T> {
+    T::parse(s)
+}

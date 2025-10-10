@@ -68,9 +68,16 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     if matches.is_empty() {
         println!("No matches for {:?} in {:#x?}..{:#x?}", string, start, end);
     } else {
-        println!("Found {:?} at:", string);
-        for addr in matches {
-            println!("  0x{:X}", addr);
+        if matches.len() > 10 {
+            println!("Found {} matches.", matches.len());
+        } else if matches.len() == 1 {
+            println!("Found 1 match at:");
+            println!("  0x{:X}", matches[0])
+        } else {
+            println!("Found {:?} matches at:", matches.len());
+            for addr in matches {
+                println!("  0x{:X}", addr);
+            }
         }
     }
 

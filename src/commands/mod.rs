@@ -121,3 +121,11 @@ pub fn parse_arg<T: crate::num::ParseNumber>(arg: Option<&&str>, name: &str)
         .and_then(|s| crate::num::parse::<T>(&s)
             .map_err(|e| format!("{} not a valid number: {:?}", name, e)))
 }
+
+/// Helper to extract a value from `arg` that generates nice error messages
+pub fn parse_value(arg: Option<&&str>)
+        -> std::result::Result<crate::num::Value, String> {
+    arg.and_then(|arg| arg.chars().nth(1))
+        .map(crate::num::Value::default_from_letter)
+        .ok_or("Missing or invalid type specifier".to_string())
+}

@@ -1,6 +1,6 @@
 use core::num::NonZero;
 use crate::remote;
-use crate::commands::parse_arg;
+use crate::commands::{parse_arg, parse_value};
 
 crate::register_command_handler!(
     handler, ["db", "dw", "dd", "dq", "dB", "dW", "dD", "dQ", "df", "dF"],
@@ -16,11 +16,7 @@ const VALUES_PER_LINE: usize = 16;
 
 fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     // Parse the value type from the first argument
-    let value = args
-        .get(0)
-        .and_then(|arg| arg.chars().nth(1))
-        .map(crate::num::Value::default_from_letter)
-        .ok_or("Missing or invalid type specifier")?;
+    let value = parse_value(args.get(0))?;
 
     // Parse the address
     let addr = parse_arg::<u64>(args.get(1), "Start address")?;

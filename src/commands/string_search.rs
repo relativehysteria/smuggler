@@ -24,11 +24,6 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     // If end is undefined, default to the maximum address
     let end = if end == 0 { u64::MAX } else { end };
 
-    // Sanity check before we do the string stuff
-    if start >= end {
-        return Err("Start must be lower than end!".to_string());
-    }
-
     // Get the string
     let string = args.get(3..)
         .filter(|parts| !parts.is_empty())

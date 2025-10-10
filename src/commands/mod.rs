@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use crate::Scanner;
 
 /// Wrapper around [`std::result::Result`] for commands
-pub type Result = std::result::Result<String, String>;
+pub type Result = std::result::Result<(), String>;
 
 // COMMAND REGISTRATION ────────────────────────────────────────────────────────
 // Things are imported using this macro to automatically expose command
@@ -37,7 +37,7 @@ import_command!(display);
 /// can then handle.
 ///
 /// If it's given valid arguments, the command must
-pub type CommandHandler = fn(&mut Scanner, &[String]) -> Result;
+pub type CommandHandler = fn(&mut Scanner, &[&str]) -> Result;
 
 /// A single command handler registration entry
 ///

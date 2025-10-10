@@ -5,7 +5,7 @@ use core::num::NonZero;
 #[macro_use] pub mod commands;
 #[macro_use] pub mod num;
 pub mod cli;
-pub mod read_remote;
+pub mod remote;
 pub mod proc_maps;
 pub use proc_maps::Maps;
 mod scanner;

@@ -4,6 +4,6 @@ crate::register_command_handler!(
     "Takes no arguments."
 );
 
-fn handler(_: &mut crate::Scanner, _: &[String]) -> crate::commands::Result {
+fn handler(_: &mut crate::Scanner, _: &[&str]) -> crate::commands::Result {
     std::process::exit(0);
 }

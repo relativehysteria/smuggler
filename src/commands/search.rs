@@ -4,6 +4,7 @@ crate::register_command_handler!(
     "Takes the value to search and the address start and end"
 );
 
-fn handler(_: &mut crate::Scanner, _: &[String]) -> crate::commands::Result {
-    Ok("Scanning!:)".to_string());
+fn handler(_: &mut crate::Scanner, _: &[&str]) -> crate::commands::Result {
+    println!("Scanning!:)");
+    Ok(())
 }

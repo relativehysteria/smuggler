@@ -69,19 +69,18 @@ impl Cli {
             let line = self.next_command()?;
 
             // Split it into substrings
-            let cmd: Vec<String> = line
+            let cmd: Vec<&str> = line
                 .split_whitespace()
-                .map(|word| word.to_string())
                 .collect();
 
             // If no command was given, go next
             if cmd.len() == 0 { continue; }
 
             // Try to get a handler for this command
-            if let Some(handler) = self.commands.get(&cmd[0]) {
+            if let Some(handler) = self.commands.get(cmd[0]) {
                 // Save command to history if execution is successful
                 match handler(&mut self.scanner, &cmd) {
-                    Ok(out) => println!("{out}"),
+                    Ok(_) => (),
                     Err(e)  => println!("!!! {e}"),
                 }
             } else {

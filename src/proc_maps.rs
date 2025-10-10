@@ -46,7 +46,7 @@ impl fmt::Display for Permissions {
 #[derive(Debug, Clone)]
 pub struct Region {
     /// The address range
-    addr: core::ops::Range<usize>,
+    addr: core::ops::Range<u64>,
 
     /// The memory permissions
     perms: Permissions,
@@ -68,8 +68,8 @@ impl Region {
         // Get the address range for this region
         let mut addr = splits.next()?.split('-');
         let addr = core::ops::Range {
-            start: usize::from_str_radix(addr.next()?, 16).ok()?,
-            end: usize::from_str_radix(addr.next()?, 16).ok()?,
+            start: u64::from_str_radix(addr.next()?, 16).ok()?,
+            end: u64::from_str_radix(addr.next()?, 16).ok()?,
         };
 
         // If the length is 0, skip it
@@ -86,7 +86,7 @@ impl Region {
     }
 
     /// Get the address range for this region
-    pub fn addr(&self) -> &core::ops::Range<usize> {
+    pub fn addr(&self) -> &core::ops::Range<u64> {
         &self.addr
     }
 

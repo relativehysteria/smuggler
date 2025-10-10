@@ -10,7 +10,7 @@ use crate::proc_maps::Region;
 #[repr(C)]
 pub struct IoVec {
     /// Start address of the region
-    pub base: usize,
+    pub base: u64,
 
     /// Length of the memory region in byte
     pub len: NonZero<usize>,
@@ -18,7 +18,7 @@ pub struct IoVec {
 
 impl IoVec {
     /// Constructs a new `IoVec` with the given base address and length
-    pub fn new(base: usize, len: NonZero<usize>) -> Self {
+    pub const fn new(base: u64, len: NonZero<usize>) -> Self {
         Self { base, len }
     }
 }
@@ -42,18 +42,45 @@ pub fn populate_regions(pid: Pid, regions: &mut [Region]) {
     let remote: Vec<IoVec> = regions.iter()
         .filter_map(|r| {
             let addr = r.addr();
-            let len = addr.end - addr.start;
+            let len = (addr.end - addr.start).try_into()
+                .expect("u64 can't fit into usize");
             NonZero::new(len).map(|nz_len| IoVec::new(addr.start, nz_len))
         })
         .collect();
 
     // Read the memory regions
-    let memory_regions = remote_readv(pid, &remote);
+    let memory_regions = read_vecs(pid, &remote);
 
     // Populate the memory pointers in the regions
     regions.iter_mut()
         .zip(memory_regions.into_iter())
         .for_each(|(region, memory)| region.memory = memory);
+}
+
+/// Attempts to read `len` of data at `addr` from a remote process
+pub fn read(pid: Pid, addr: u64, len: NonZero<usize>) -> Option<Vec<u8>> {
+    // Create the remote iovec out of the arguments
+    let remote = IoVec::new(addr, len);
+
+    // Create the backing vector for this memory
+    let mut backing: Vec<u8> = Vec::with_capacity(remote.len.into());
+
+    // Create the local iovec
+    let local = IoVec::new(backing.as_ptr() as u64, remote.len);
+
+    // Do the read
+    let read = unsafe {
+        process_vm_readv(pid,
+            core::ptr::addr_of!(local), 1,
+            core::ptr::addr_of!(remote), 1, 0)
+    };
+
+    if read >= 0 && read as usize == remote.len.into() {
+        unsafe { backing.set_len(remote.len.into()); }
+        Some(backing)
+    } else {
+        None
+    }
 }
 
 /// Reads memory from the specified `remote` iovecs into local buffers.
@@ -62,7 +89,7 @@ pub fn populate_regions(pid: Pid, regions: &mut [Region]) {
 ///
 /// If a region is invalid, it’s skipped, and the function retries with
 /// the remaining valid regions.
-fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
+pub fn read_vecs(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
     assert!(remote.len() > 0);
 
     // Allocate local buffers matching each remote region
@@ -73,7 +100,7 @@ fn remote_readv(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
     // Then create local iovecs for each of those vectors
     let local: Vec<IoVec> = backing_vecs.iter_mut()
         .map(|vec| (vec.as_mut_ptr(), NonZero::new(vec.capacity())))
-        .map(|(ptr, cap)| IoVec::new(ptr as usize, cap.unwrap()))
+        .map(|(ptr, cap)| IoVec::new(ptr as u64, cap.unwrap()))
         .collect();
 
     // NOTE: If the first remote iovec is invalid, `process_vm_readv` returns

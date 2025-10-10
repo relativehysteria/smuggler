@@ -190,38 +190,3 @@ impl Maps {
             }
         })
     }
-
-//    /// Returns iovecs for all memory regions within `range`. Each iovec will
-//    /// have length at most equal to `chunk_size`
-//    pub fn chunks(self, chunk_size: usize, range: Range<u64>) -> Vec<IoVec> {
-//        let mut result = Vec::new();
-//
-//        for region in self.0 {
-//            let reg = region.addr;
-//
-//            // Compute intersection of region and range
-//            let start = reg.start.max(range.start);
-//            let end   = reg.end.max(range.end);
-//
-//            // Skip if no overlap
-//            if start >= end { continue; }
-//
-//            // Now chunk it up
-//            let mut cur = start;
-//            while cur < end {
-//                let remaining = end - cur;
-//
-//                let len: usize = remaining.min(chunk_size as u64)
-//                    .try_into().expect("u64 can't fit into usize");
-//
-//                if let Some(len) = NonZero::new(len) {
-//                    result.push(IoVec::new(cur, len));
-//                }
-//
-//                cur += len as u64;
-//            }
-//        }
-//
-//        result
-//    }
-}

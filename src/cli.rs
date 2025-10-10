@@ -26,7 +26,7 @@ pub struct Cli {
 impl Cli {
     /// Create a new scanner interface for the following PID
     pub fn new(pid: Pid, prompt: String) -> crate::Result<Self> {
-        // Make sure the maps file is accessible
+        // Make sure we can read from this process
         let _ = crate::Maps::accessible(pid)?;
 
         // Save the history file path

@@ -109,9 +109,11 @@ impl Maps {
         format!("/proc/{}/maps", pid.0)
     }
 
-    /// Check whether the maps file is accessible
+    /// Check whether the maps file and memory is accessible
     pub fn accessible(pid: Pid) -> crate::Result<()> {
         let _ = std::fs::File::open(Self::path(pid)).map_err(Error::Io)?;
+        let _ = std::fs::File::open(format!("/proc/{}/mem", pid.0))
+            .map_err(Error::Io)?;
         Ok(())
     }
 

@@ -31,7 +31,7 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     let maps = crate::proc_maps::Maps::rw_regions(s.pid())
         .map_err(|e| format!("Couldn't parse memory map: {:?}", e))?;
 
-    // Get the iovec batches for memory chunks of `CHUNK_SIZE`
+    // Get the iovec batches
     let iovecs = maps.chunks(core::ops::Range { start, end });
 
     // Search for the string and save off the adresses where it's found

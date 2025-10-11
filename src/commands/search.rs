@@ -12,7 +12,7 @@ r#"`<start_address> <end_address> <constraints>`
 "#
 );
 
-fn handler(_: &mut crate::Scanner, _: &[&str]) -> crate::commands::Result {
+fn handler(s: &mut crate::Scanner, _: &[&str]) -> crate::commands::Result {
     // Parse the value type from the first argument
     let value = parse_value(args.get(0))?;
 

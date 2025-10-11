@@ -13,9 +13,6 @@ r#"`<start_address> <end_address> <string>`
 "#
 );
 
-/// The size of memory chunks to be read and searched at a time
-const CHUNK_SIZE: usize = 1024 * 1024 * 1024;
-
 fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     // Parse the start and end addresses
     let start = parse_arg::<u64>(args.get(1), "Start address")?;
@@ -35,7 +32,7 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
         .map_err(|e| format!("Couldn't parse memory map: {:?}", e))?;
 
     // Get the iovec batches for memory chunks of `CHUNK_SIZE`
-    let iovecs = maps.chunks(CHUNK_SIZE, core::ops::Range { start, end });
+    let iovecs = maps.chunks(core::ops::Range { start, end });
 
     // Search for the string and save off the adresses where it's found
     let mut matches = Vec::new();

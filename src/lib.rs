@@ -9,7 +9,7 @@ pub mod remote;
 pub mod proc_maps;
 pub use proc_maps::Maps;
 mod scanner;
-pub use scanner::Scanner;
+pub use scanner::{Scanner, CHUNK_SIZE};
 
 /// Wrapper around [`std::result::Result`] for this application
 pub type Result<T> = std::result::Result<T, Error>;

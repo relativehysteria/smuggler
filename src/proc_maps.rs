@@ -3,10 +3,7 @@
 use core::num::NonZero;
 use core::ops::Range;
 use std::fmt;
-use crate::{Error, Pid, remote::IoVec};
-
-/// Default to some large chunk size
-pub const CHUNK_SIZE: usize = 1024 * 1024 * 1024;
+use crate::{Error, Pid, remote::IoVec, CHUNK_SIZE};
 
 /// Memory permissions
 #[derive(Debug, Clone)]

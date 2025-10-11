@@ -29,6 +29,7 @@ import_command!(maps);
 import_command!(display);
 import_command!(string_scan);
 import_command!(scan);
+import_command!(rescan);
 import_command!(history);
 
 // ─────────────────────────────────────────────────────────────────────────────

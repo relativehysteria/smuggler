@@ -58,7 +58,7 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
 
     // Print the results
     if matches.is_empty() {
-        println!("No matches for in {:#x?}..{:#x?}", start, end);
+        println!("No matches.");
     } else {
         if matches.len() > 10 {
             println!("Found {} matches.", matches.len());

@@ -4,6 +4,9 @@
 
 use crate::Pid;
 
+/// The amount of memory to read in a single go when scanning
+pub const CHUNK_SIZE: usize = 1024 * 1024 * 1024;
+
 #[derive(Debug)]
 pub struct Scanner {
     /// The PID we want to scan

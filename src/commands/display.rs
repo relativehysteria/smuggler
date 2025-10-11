@@ -7,12 +7,15 @@ crate::register_command_handler!(
     "Display memory bytes.",
 r#"`<address> [<length>]`
 * `address` -- The address where the display should start in hex
-* `length` -- The amount of bytes to show in hex. `0x40` by default.
+* `length` -- The amount of bytes to show in hex. [`DEFAULT_BYTES`] by default.
 "#
 );
 
 /// Number of byte values preinted per line
 const VALUES_PER_LINE: usize = 16;
+
+/// Default amount of of bytes to show
+pub const DEFAULT_BYTES: usize = 0x40;
 
 fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     // Parse the value type from the first argument
@@ -26,7 +29,7 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
         .map(|s| crate::num::parse::<usize>(s)
             .map_err(|e| format!("Length not a valid number: {:?}", e)))
         .transpose()?
-        .unwrap_or(0x40);
+        .unwrap_or(DEFAULT_BYTES);
 
     // Make sure we have nonzero length
     let len = NonZero::new(len).ok_or("Length must not be zero!")?;

@@ -27,8 +27,8 @@ macro_rules! import_command {
 import_command!(exit);
 import_command!(maps);
 import_command!(display);
-import_command!(string_search);
-import_command!(search);
+import_command!(string_scan);
+import_command!(scan);
 import_command!(history);
 
 // ─────────────────────────────────────────────────────────────────────────────

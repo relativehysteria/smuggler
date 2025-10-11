@@ -29,6 +29,7 @@ import_command!(maps);
 import_command!(display);
 import_command!(string_search);
 import_command!(search);
+import_command!(history);
 
 // ─────────────────────────────────────────────────────────────────────────────
 

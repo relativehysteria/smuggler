@@ -4,11 +4,11 @@ crate::register_command_handler!(
     handler, ["sb", "sw", "sd", "sq", "sB", "sW", "sD", "sQ", "sf", "sF"],
     "Scan the memory for values.",
 r#"`<start_address> <end_address> <constraints>`
-* `start_address` - Start searching from this address. If this is `0`, the
-   search will start from the first readable memory region.
-* `end_address` - Stop searching at this address. If this is `0`, the search
+* `start_address` - Start scanning from this address. If this is `0`, the
+   scan will start from the first readable memory region.
+* `end_address` - Stop scanning at this address. If this is `0`, the scan
    will stop at the last readable memory region.
-* `constraints` - The constraints by which to search
+* `constraints` - The constraints by which to scan
 "#
 );
 

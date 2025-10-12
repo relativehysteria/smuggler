@@ -60,7 +60,7 @@ pub fn scan_batch(
     pid: crate::Pid,
     matches: &mut Vec<u64>,
     batch: &[IoVec],
-    mut value: Value,
+    value: Value,
     constraints: &[Constraint],
 ) {
     // Read the memory

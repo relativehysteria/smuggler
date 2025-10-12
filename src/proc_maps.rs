@@ -78,7 +78,8 @@ impl Region {
         let perms = Permissions::from_str(splits.next()?)?;
 
         // Get the path if there's any at all
-        let path = splits.nth(3).map(str::to_string);
+        let path = splits.skip(3).intersperse(" ").collect::<String>();
+        let path = if path.is_empty() { None } else { Some(path) };
 
         // Return the parsed memory region
         Some(Self { addr, perms, path })

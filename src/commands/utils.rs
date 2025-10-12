@@ -1,6 +1,6 @@
 //! Utilities for handlers
 
-use crate::Scanner;
+use crate::{Scanner, remote::IoVec};
 use crate::num::{Constraint, Value};
 
 /// Helper to extract a `T` from `arg` that generates nice error messages
@@ -50,5 +50,37 @@ pub fn print_and_save_results(s: &mut Scanner, results: Vec<u64>) {
 
         // Save the results
         s.results = results;
+    }
+}
+
+/// Common utility function for scanning memory based on constraints
+pub fn scan_batch(
+    pid: crate::Pid,
+    matches: &mut Vec<u64>,
+    batch: &[IoVec],
+    mut value: Value,
+    constraints: &[Constraint],
+) {
+    // Read the memory
+    let memory = crate::remote::read_vecs(pid, &batch);
+
+    // Retain only those chunks of memory that have been successfully read
+    let chunks = batch.iter().zip(memory.into_iter())
+        .filter(|(_, mem)| mem.is_some())
+        .map(|(iovec, mem)| (iovec, mem.unwrap()));
+
+    // Go through each region and scan
+    for (iovec, mem) in chunks {
+        // Go through the region in chunks
+        for (offset, chunk) in mem.chunks_exact(value.bytes()).enumerate() {
+            // Update the value
+            value.from_le_bytes(chunk);
+
+            // Check that constraints match and if they do, save the address
+            if constraints.iter().all(|x| x.check(value)) {
+                let abs = iovec.base + offset as u64 * value.bytes() as u64;
+                matches.push(abs);
+            }
+        }
     }
 }

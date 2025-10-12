@@ -1,3 +1,4 @@
+use core::cmp::Ordering;
 use crate::commands::parse_arg;
 
 crate::register_command_handler!(
@@ -16,15 +17,20 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     let maps = crate::Maps::all_regions(s.pid())
         .map_err(|_| "Couldn't read regions".to_string())?;
 
-    // Binsearch would be faster but this will be instant anyways
-    for region in maps.0.iter() {
-        // Don't overiterate. Stop when we're too far
-        if region.addr.start > addr { break; }
 
-        if region.addr.start <= addr && region.addr.end > addr {
-            println!("{region:X?}");
-            break;
+    // Binsearch would be faster but this will be instant anyways
+    let result = maps.0.binary_search_by(|region| {
+        if region.addr.start > addr {
+            Ordering::Greater
+        } else if region.addr.start <= addr && region.addr.end > addr {
+            Ordering::Equal
+        } else {
+            Ordering::Less
         }
+    });
+
+    if let Ok(region) = result {
+        println!("{}", maps.0[region]);
     }
 
     Ok(())

@@ -28,7 +28,7 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
         .ok_or("String missing!")?;
 
     // Get the memory map
-    let maps = crate::proc_maps::Maps::rw_regions(s.pid())
+    let maps = crate::proc_maps::Maps::interesting_regions(s.pid())
         .map_err(|e| format!("Couldn't parse memory map: {:?}", e))?;
 
     // Get the iovec batches

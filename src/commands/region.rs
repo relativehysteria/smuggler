@@ -2,7 +2,7 @@ use crate::commands::{parse_arg, get_addr_region};
 
 crate::register_command_handler!(
     handler, ["r", "reg", "region"],
-    "Show what region an address is mapped in",
+    "Show what region an address is mapped in.",
 r#"`<address>`
 * `address` - The address whose region will be shown
 "#

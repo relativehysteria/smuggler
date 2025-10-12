@@ -138,6 +138,14 @@ impl Maps {
         Self::regions(pid, |reg| reg.perms.read && reg.perms.write)
     }
 
+    /// Parse memory regions for `pid` which this scanner deems "interesting"
+    ///
+    /// "Interesting" means that these regions are interesting enough to be
+    /// scanned by the scanning functions
+    pub fn interesting_regions(pid: Pid) -> crate::Result<Self> {
+        Self::rw_regions(pid)
+    }
+
     /// Parse all memory regions for `pid`
     pub fn all_regions(pid: Pid) -> crate::Result<Self> {
         Self::regions(pid, |_| true)

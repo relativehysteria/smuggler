@@ -2,7 +2,7 @@ use crate::commands::parse_arg;
 
 crate::register_command_handler!(
     handler, ["h", "hist", "history"],
-    "Show the addresses of the last scan",
+    "Show the addresses of the last scan.",
 r#"`<n_addresses>`
 * `n_addresses` - Maximum number of addresses to show. Starts at the first one.
   If this is `0`, all addresses will be shown

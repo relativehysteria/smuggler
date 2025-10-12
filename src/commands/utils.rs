@@ -1,5 +1,7 @@
 //! Utilities for handlers
 
+use rayon::prelude::*;
+use std::sync::{Arc, Mutex};
 use crate::{Scanner, remote::IoVec};
 use crate::num::{Constraint, Value};
 
@@ -64,23 +66,40 @@ pub fn scan_batch(
     // Read the memory
     let memory = crate::remote::read_vecs(pid, &batch);
 
-    // Retain only those chunks of memory that have been successfully read
-    let chunks = batch.iter().zip(memory.into_iter())
-        .filter(|(_, mem)| mem.is_some())
-        .map(|(iovec, mem)| (iovec, mem.unwrap()));
+    // Retain only successfully read chunks
+    let chunks: Vec<_> = batch.iter()
+        .zip(memory.into_iter())
+        .filter_map(|(iovec, mem)| mem.map(|m| (iovec, m)))
+        .collect();
 
-    // Go through each region and scan
-    for (iovec, mem) in chunks {
-        // Go through the region in chunks
-        for (offset, chunk) in mem.chunks_exact(value.bytes()).enumerate() {
-            // Update the value
-            value.from_le_bytes(chunk);
+    // Shared matches vector with interior mutability
+    let results = Arc::new(Mutex::new(Vec::new()));
 
-            // Check that constraints match and if they do, save the address
-            if constraints.iter().all(|x| x.check(value)) {
-                let abs = iovec.base + offset as u64 * value.bytes() as u64;
-                matches.push(abs);
+    // Parallel iteration over chunks
+    chunks.par_iter().for_each(|(iovec, mem)| {
+        let mut local_results = Vec::new();
+
+        // Local copy of the value
+        let mut v = value;
+
+        for (offset, chunk) in mem.chunks_exact(v.bytes()).enumerate() {
+            v.from_le_bytes(chunk);
+
+            // Check constraints
+            if constraints.iter().all(|x| x.check(v)) {
+                let abs = iovec.base + offset as u64 * v.bytes() as u64;
+                local_results.push(abs);
             }
         }
-    }
+
+        // Append to global results
+        if !local_results.is_empty() {
+            let mut guard = results.lock().unwrap();
+            guard.extend(local_results);
+        }
+    });
+
+    // Move collected results back into matches
+    let mut guard = results.lock().unwrap();
+    matches.extend(guard.drain(..));
 }

@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 rustyline = "17.0.1"
 memchr = "2.7.6"
+rayon = "1.11"

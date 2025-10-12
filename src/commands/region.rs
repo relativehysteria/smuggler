@@ -18,7 +18,7 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
         .map_err(|_| "Couldn't read regions".to_string())?;
 
 
-    // Binsearch would be faster but this will be instant anyways
+    // Binsearch for the matching region
     let result = maps.0.binary_search_by(|region| {
         if region.addr.start > addr {
             Ordering::Greater

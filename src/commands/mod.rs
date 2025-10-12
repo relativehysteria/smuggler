@@ -8,10 +8,11 @@
 //! macro. The macro places the handler in a special linker section, which is
 //! walked at runtime to construct a full list of available commands.
 
-use std::result::Result as StdResult;
 use std::collections::HashMap;
 use crate::Scanner;
-use crate::num::{Constraint, Value};
+
+mod utils;
+pub use utils::*;
 
 // COMMAND REGISTRATION ────────────────────────────────────────────────────────
 // Things are imported using this macro to automatically expose command
@@ -116,31 +117,4 @@ pub fn get_command_handlers() -> HashMap<String, CommandHandler> {
         }
     }
     map
-}
-
-/// Helper to extract a `T` from `arg` that generates nice error messages
-pub fn parse_arg<T: crate::num::ParseNumber>(arg: Option<&&str>, name: &str)
-        -> StdResult<T, String> {
-    arg
-        .ok_or_else(|| format!("{} missing", name))
-        .and_then(|s| crate::num::parse::<T>(&s)
-            .map_err(|e| format!("{} not a valid number: {:?}", name, e)))
-}
-
-/// Helper to extract a value from `arg` that generates nice error messages
-pub fn parse_value(arg: Option<&&str>) -> StdResult<crate::num::Value, String> {
-    arg.and_then(|arg| arg.chars().nth(1))
-        .map(crate::num::Value::default_from_letter)
-        .ok_or("Missing or invalid type specifier".to_string())
-}
-
-/// Helper to extract constraints from `args` that generates nice error messages
-pub fn parse_constraints(args: &[&str], value: Value)
-        -> StdResult<Vec<Constraint>, String> {
-    if args.is_empty() { return Err("Constraints missing".to_string()); }
-
-    args.iter()
-        .map(|&c| Constraint::from_str_value(c, Some(value))
-            .map_err(|e| format!("Couldn't parse constraints: {:?}", e)))
-        .collect::<StdResult<Vec<Constraint>, String>>()
 }

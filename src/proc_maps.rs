@@ -87,8 +87,9 @@ impl Region {
 
 impl fmt::Display for Region {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "0x{:<014X?} | 0x{:<9X} {} {}",
-            self.addr,
+        write!(f, "0x{:<014X} 0x{:<014X} | 0x{:<9X} {} {}",
+            self.addr.start,
+            self.addr.end,
             self.addr.end - self.addr.start,
             self.perms,
             match &self.path {

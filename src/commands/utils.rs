@@ -1,8 +1,9 @@
 //! Utilities for handlers
 
-use rayon::prelude::*;
+use core::cmp::Ordering;
 use std::sync::{Arc, Mutex};
-use crate::{Scanner, remote::IoVec};
+use rayon::prelude::*;
+use crate::{Scanner, remote::IoVec, proc_maps::Region};
 use crate::num::{Constraint, Value};
 
 /// Helper to extract a `T` from `arg` that generates nice error messages
@@ -53,6 +54,22 @@ pub fn print_and_save_results(s: &mut Scanner, results: Vec<u64>) {
         // Save the results
         s.results = results;
     }
+}
+
+/// Find out which region in `regions` an `addr` maps to
+pub fn get_addr_region(regions: &[Region], addr: u64) -> Option<&Region> {
+    // Binsearch for the matching region
+    regions.binary_search_by(|region| {
+        if region.addr.start > addr {
+            Ordering::Greater
+        } else if region.addr.start <= addr && region.addr.end > addr {
+            Ordering::Equal
+        } else {
+            Ordering::Less
+        }
+    })
+    .ok()
+    .map(|idx| &regions[idx])
 }
 
 /// Common utility function for scanning memory based on constraints

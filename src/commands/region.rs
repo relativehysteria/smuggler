@@ -1,5 +1,4 @@
-use core::cmp::Ordering;
-use crate::commands::parse_arg;
+use crate::commands::{parse_arg, get_addr_region};
 
 crate::register_command_handler!(
     handler, ["r", "reg", "region"],
@@ -17,20 +16,9 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     let maps = crate::Maps::all_regions(s.pid())
         .map_err(|_| "Couldn't read regions".to_string())?;
 
-
-    // Binsearch for the matching region
-    let result = maps.0.binary_search_by(|region| {
-        if region.addr.start > addr {
-            Ordering::Greater
-        } else if region.addr.start <= addr && region.addr.end > addr {
-            Ordering::Equal
-        } else {
-            Ordering::Less
-        }
-    });
-
-    if let Ok(region) = result {
-        println!("{}", maps.0[region]);
+    // Print the region that maps this address
+    if let Some(region) = get_addr_region(&maps.0, addr) {
+        println!("{region}");
     }
 
     Ok(())

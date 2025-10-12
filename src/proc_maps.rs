@@ -84,6 +84,38 @@ impl Region {
         // Return the parsed memory region
         Some(Self { addr, perms, path })
     }
+
+    /// Checks whether this region is "interesting" enough for the scanner to
+    /// scan
+    fn is_interesting(&self) -> bool {
+        // Must be readable and writable
+        if !(self.perms.read && self.perms.write) { return false; }
+
+        // Exclude obvious kernel / helper mappings
+        if let Some(ref name) = self.path {
+            let name = name.as_str();
+
+            // Skip kernel heper pseudo-mappings
+            if name.starts_with("[vvar") ||
+                    matches!(name, "[vdso]" | "[vsyscall]") {
+                return false
+            }
+
+            // Skip common system files
+            if name.starts_with("/dev") || name.starts_with("/sys") ||
+                    name.starts_with("/proc") {
+                return false;
+            }
+
+            // Deleted files are likely caches and stuff and not interesting for
+            // my use cases.
+            if name.ends_with("(deleted)") {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
 impl fmt::Display for Region {
@@ -143,7 +175,9 @@ impl Maps {
     /// "Interesting" means that these regions are interesting enough to be
     /// scanned by the scanning functions
     pub fn interesting_regions(pid: Pid) -> crate::Result<Self> {
-        Self::rw_regions(pid)
+        let mut maps = Self::rw_regions(pid)?;
+        maps.0.retain(|reg| reg.is_interesting());
+        Ok(maps)
     }
 
     /// Parse all memory regions for `pid`

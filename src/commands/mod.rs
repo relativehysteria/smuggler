@@ -32,6 +32,7 @@ import_command!(string_scan);
 import_command!(scan);
 import_command!(rescan);
 import_command!(history);
+import_command!(region);
 
 // ─────────────────────────────────────────────────────────────────────────────
 

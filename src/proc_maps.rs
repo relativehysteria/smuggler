@@ -136,6 +136,11 @@ impl Maps {
         Self::regions(pid, |reg| reg.perms.read && reg.perms.write)
     }
 
+    /// Parse all memory regions for `pid`
+    pub fn all_regions(pid: Pid) -> crate::Result<Self> {
+        Self::regions(pid, |_| true)
+    }
+
     /// Returns an iterator over groups of IoVecs where each group fits within
     /// [`CHUNK_SIZE`] bytes and lies within `range`.
     pub fn chunks(self, range: Range<u64>) -> impl Iterator<Item = Vec<IoVec>> {

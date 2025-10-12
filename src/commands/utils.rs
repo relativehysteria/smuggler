@@ -43,16 +43,34 @@ pub fn print_and_save_results(s: &mut Scanner, results: Vec<u64>) {
             println!("Found {} results.", results.len());
         } else if results.len() == 1 {
             println!("Found 1 match at:");
-            println!("  0x{:X}", results[0])
+            print_results(s.pid(), &results, usize::MAX);
         } else {
             println!("Found {:?} results at:", results.len());
-            for addr in results.iter() {
-                println!("  0x{:X}", addr);
-            }
+            print_results(s.pid(), &results, usize::MAX);
         }
 
         // Save the results
         s.results = results;
+    }
+}
+
+
+/// Print `num` `results` to the screen, showing possibly pointers mapped to a
+/// file (possibly static) in a different color
+pub fn print_results(pid: crate::Pid, results: &[u64], num: usize) {
+    if num == 0 { return; }
+
+    // Get the regions that can contain mapped files pointers
+    let mut maps = crate::Maps::interesting_regions(pid).unwrap();
+    maps.0.retain(|reg| reg.is_likely_file_backed());
+
+    // Go through each address and print file pointers in a different color
+    for &addr in results.iter().take(num) {
+        if get_addr_region(&maps.0, addr).is_some() {
+            println!("\x1b[0;32m0x{addr:X}\x1b[0m");
+        } else {
+            println!("0x{addr:X}");
+        }
     }
 }
 

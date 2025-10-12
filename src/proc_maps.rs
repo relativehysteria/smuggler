@@ -107,13 +107,61 @@ impl Region {
                 return false;
             }
 
-            // Deleted files are likely caches and stuff and not interesting for
-            // my use cases.
-            if name.ends_with("(deleted)") {
+            // Skip kernel fds (eventfds, epoll, etc.) and memfds
+            if name.starts_with("anon_inode:") || name.starts_with("memfd:") {
+                return false;
+            }
+
+            // Deleted files are likely caches and stuff and not interesting
+            if name.trim_end().ends_with("(deleted)") {
                 return false;
             }
         }
 
+        true
+    }
+
+    /// Checks whether this region is likely backed by an actual file
+    ///
+    /// This does not attempt to open the file and so is just a simple heuristic
+    /// based on whether there's any path at all for this region, and whether
+    /// it's a pseudo path
+    pub fn is_likely_file_backed(&self) -> bool {
+        // If there's no path, there's no file :)
+        if self.path.is_none() { return false; }
+
+        let name = self.path.as_ref().unwrap();
+
+        // Exclude pseudo paths
+        if name.starts_with('[') {
+            return false;
+        }
+
+        // Exclude dev/tmp/proc/sys
+        if name.starts_with("/dev")
+            || name.starts_with("/proc")
+            || name.starts_with("/sys")
+            || name.starts_with("/tmp")
+            || name.starts_with("/run") {
+            return false;
+        }
+
+        // Exclude deleted files -- not stable
+        if name.trim().ends_with("(deleted)") {
+            return false;
+        }
+
+        // Exclude memfd (often runtime-generated, JITs, etc.)
+        if name.starts_with("memfd:") {
+            return false;
+        }
+
+        // Exclude shared memory (may change between runs)
+        if name.starts_with("/dev/shm") {
+            return false;
+        }
+
+        // Otherwise, looks like a real, stable file-backed mapping
         true
     }
 }

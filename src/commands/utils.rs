@@ -1,5 +1,6 @@
 //! Utilities for handlers
 
+use crate::Scanner;
 use crate::num::{Constraint, Value};
 
 /// Helper to extract a `T` from `arg` that generates nice error messages
@@ -27,4 +28,27 @@ pub fn parse_constraints(args: &[&str], value: Value)
         .map(|&c| Constraint::from_str_value(c, Some(value))
             .map_err(|e| format!("Couldn't parse constraints: {:?}", e)))
         .collect::<Result<Vec<Constraint>, String>>()
+}
+
+/// Print the results of a scan to the screen and save them in the scanner
+pub fn print_and_save_results(s: &mut Scanner, results: Vec<u64>) {
+    // Print the results
+    if results.is_empty() {
+        println!("No results.");
+    } else {
+        if results.len() > 10 {
+            println!("Found {} results.", results.len());
+        } else if results.len() == 1 {
+            println!("Found 1 match at:");
+            println!("  0x{:X}", results[0])
+        } else {
+            println!("Found {:?} results at:", results.len());
+            for addr in results.iter() {
+                println!("  0x{:X}", addr);
+            }
+        }
+
+        // Save the results
+        s.results = results;
+    }
 }

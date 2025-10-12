@@ -76,9 +76,8 @@ impl Cli {
             // If no command was given, go next
             if cmd.len() == 0 { continue; }
 
-            // Try to get a handler for this command
+            // Try to get a handler for this command and run it
             if let Some(handler) = self.commands.get(cmd[0]) {
-                // Save command to history if execution is successful
                 match handler(&mut self.scanner, &cmd) {
                     Ok(_) => (),
                     Err(e)  => println!("!!! {e}"),

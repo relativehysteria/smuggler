@@ -38,9 +38,6 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     let mem = remote::read(s.pid(), addr, len)
         .ok_or(format!("Couldn't read remote memory at 0x{:X?}", addr))?;
 
-    // Print the newline header
-    print!("\x1b[0;34m{:016x}\x1b[0m │ ", addr);
-
     // Derived constants:
     // * bytes_per_value: how many bytes make up one displayed unit
     // * vals_per_line:   how many values fit in one 16-byte text line
@@ -49,71 +46,79 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     let vals_per_line = VALUES_PER_LINE / bytes_per_value;
     let total_values = (mem.len() + bytes_per_value - 1) / bytes_per_value;
 
+    // Print the address header
+    print_address_header(addr);
+
     // Iterate over memory one value at a time
     for (i, chunk) in mem.chunks(bytes_per_value).enumerate() {
-        if chunk.len() == bytes_per_value {
-            // Full chunk: convert the bytes into the requested value type
-            let mut val = value;
-            val.from_le_bytes(chunk);
+        // Print the value
+        print_value(s, chunk, value);
 
-            // Check whether the value is a valid readable pointer. If it is, we
-            // colorize it
-            let len = NonZero::new(1).unwrap();
-            let is_valid = remote::read(s.pid(), val.as_u64(), len).is_some();
-
-            if is_valid {
-                print!("\x1b[0;32m{val}\x1b[0m ");
-            } else {
-                print!("{val} ");
-            }
-        } else {
-            // Partial chunk: occurs when the requested memory size is not an
-            // exact multiple of the value size. We can't safely decode it, so
-            // we print a visual placeholder instead.
-            print!("{} ", "?".repeat(value.display()));
-        }
-
-        // When we've printed a full line of values, emit the ASCII dump.
+        // Print the ASCII
         if (i + 1) % vals_per_line == 0 {
-            // Compute which bytes correspond to this visual line
             let base = (i + 1 - vals_per_line) * bytes_per_value;
             let ascii_slice = &mem[base..mem.len().min(base + VALUES_PER_LINE)];
-
-            // ASCII view
-            print!("│ ");
-            for &b in ascii_slice {
-                let c = if b.is_ascii_graphic() { b as char } else { '.' };
-                print!("{c}");
-            }
+            print_ascii(ascii_slice);
             println!();
 
             // If more values remain, print the next address header
             if i + 1 != total_values {
                 let next_addr = addr + ((i + 1) * bytes_per_value) as u64;
-                print!("\x1b[34m{next_addr:016x}\x1b[0m │ ");
+                print_address_header(next_addr);
             }
         }
     }
 
-    // Handle final line if oncomplete
+    // Handle final line if incomplete
     if total_values % vals_per_line != 0 {
         // Compute where the remaining bytes begin
         let remaining_start = (total_values / vals_per_line) * VALUES_PER_LINE;
         let ascii_slice = &mem[remaining_start..];
         let pad_len = VALUES_PER_LINE - ascii_slice.len();
 
-        // Pad spacing to match value columns visually
+        // Pad spacing to match value columns visually and print the ASCII
         let width = pad_len / bytes_per_value * (value.display() + 1);
         print!("{:width$}", "");
-
-        // Print the trailing ASCII
-        print!("│ ");
-        for &b in ascii_slice {
-            let c = if b.is_ascii_graphic() { b as char } else { '.' };
-            print!("{c}");
-        }
+        print_ascii(ascii_slice);
         println!();
     }
 
     Ok(())
+}
+
+/// Prints a memory value, optionally colorized if it's a valid pointer.
+fn print_value(s: &crate::Scanner, chunk: &[u8], mut value: crate::num::Value) {
+    if chunk.len() == value.bytes() {
+        // Full chunk: convert the bytes into the requested value type
+        value.from_le_bytes(chunk);
+        // Check whether the value is a valid readable pointer. If it is, we
+        // colorize it
+        let len = NonZero::new(1).unwrap();
+        let is_valid = remote::read(s.pid(), value.as_u64(), len).is_some();
+
+        if is_valid {
+            print!("\x1b[0;32m{value}\x1b[0m ");
+        } else {
+            print!("{value} ");
+        }
+    } else {
+        // Partial chunk: occurs when the requested memory size is not an
+        // exact multiple of the value size. We can't safely decode it, so
+        // we print a visual placeholder instead.
+        print!("{} ", "?".repeat(value.display()));
+    }
+}
+
+/// Prints the ASCII side of the memory line.
+fn print_ascii(slice: &[u8]) {
+    print!("│ ");
+    for &b in slice {
+        let c = if b.is_ascii_graphic() { b as char } else { '.' };
+        print!("{c}");
+    }
+}
+
+/// Prints the colored address header.
+fn print_address_header(addr: u64) {
+    print!("\x1b[0;34m{addr:016x}\x1b[0m │ ");
 }

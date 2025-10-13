@@ -64,7 +64,7 @@ pub fn read(pid: Pid, addr: u64, len: NonZero<usize>) -> Option<Vec<u8>> {
 ///
 /// Each remote iovec maps 1:1 to a local buffer of the same size.
 ///
-/// If a region is invalid, it’s skipped, and the function retries with
+/// If a region is invalid, it's skipped, and the function retries with
 /// the remaining valid regions.
 pub fn read_vecs(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
     assert!(remote.len() > 0);

@@ -39,18 +39,25 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
         .ok_or(format!("Couldn't read remote memory at 0x{:X?}", addr))?;
 
     // Print the newline header
-    print!("\x1b[0;34m{:016x}\x1b[0m: ", addr);
+    print!("\x1b[0;34m{:016x}\x1b[0m │ ", addr);
 
+    // Derived constants:
+    // * bytes_per_value: how many bytes make up one displayed unit
+    // * vals_per_line:   how many values fit in one 16-byte text line
+    // * total_values:    number of value-sized chunks, rounded up
     let bytes_per_value = value.bytes();
     let vals_per_line = VALUES_PER_LINE / bytes_per_value;
+    let total_values = (mem.len() + bytes_per_value - 1) / bytes_per_value;
 
+    // Iterate over memory one value at a time
     for (i, chunk) in mem.chunks(bytes_per_value).enumerate() {
-        // Print value or placeholder
         if chunk.len() == bytes_per_value {
+            // Full chunk: convert the bytes into the requested value type
             let mut val = value;
             val.from_le_bytes(chunk);
 
-            // Check whether the value is a valid readable pointer
+            // Check whether the value is a valid readable pointer. If it is, we
+            // colorize it
             let len = NonZero::new(1).unwrap();
             let is_valid = remote::read(s.pid(), val.as_u64(), len).is_some();
 
@@ -60,30 +67,52 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
                 print!("{val} ");
             }
         } else {
-            // Incomplete chunk -- print placeholder
-            print!("{:?} ", "?".repeat(value.display()));
+            // Partial chunk: occurs when the requested memory size is not an
+            // exact multiple of the value size. We can't safely decode it, so
+            // we print a visual placeholder instead.
+            print!("{} ", "?".repeat(value.display()));
         }
 
-        // Newline + ASCII dump every 16 bytes
+        // When we've printed a full line of values, emit the ASCII dump.
         if (i + 1) % vals_per_line == 0 {
-            let base = i / vals_per_line * 16;
-            let ascii_slice = &mem[base..mem.len().min(base + 16)];
+            // Compute which bytes correspond to this visual line
+            let base = (i + 1 - vals_per_line) * bytes_per_value;
+            let ascii_slice = &mem[base..mem.len().min(base + VALUES_PER_LINE)];
 
+            // ASCII view
+            print!("│ ");
             for &b in ascii_slice {
                 let c = if b.is_ascii_graphic() { b as char } else { '.' };
                 print!("{c}");
             }
             println!();
 
-            // Stop if all values have been printed
-            if i + 1 == mem.len() / bytes_per_value {
-                break;
+            // If more values remain, print the next address header
+            if i + 1 != total_values {
+                let next_addr = addr + ((i + 1) * bytes_per_value) as u64;
+                print!("\x1b[34m{next_addr:016x}\x1b[0m │ ");
             }
-
-            // Print next line header.
-            let next_addr = addr + ((i + 1) * bytes_per_value) as u64;
-            print!("\x1b[34m{next_addr:016x}\x1b[0m: ");
         }
+    }
+
+    // Handle final line if oncomplete
+    if total_values % vals_per_line != 0 {
+        // Compute where the remaining bytes begin
+        let remaining_start = (total_values / vals_per_line) * VALUES_PER_LINE;
+        let ascii_slice = &mem[remaining_start..];
+        let pad_len = VALUES_PER_LINE - ascii_slice.len();
+
+        // Pad spacing to match value columns visually
+        let width = pad_len / bytes_per_value * (value.display() + 1);
+        print!("{:width$}", "");
+
+        // Print the trailing ASCII
+        print!("│ ");
+        for &b in ascii_slice {
+            let c = if b.is_ascii_graphic() { b as char } else { '.' };
+            print!("{c}");
+        }
+        println!();
     }
 
     Ok(())

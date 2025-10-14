@@ -107,14 +107,31 @@ pub fn scan_batch(
         .filter_map(|(iovec, mem)| mem.map(|m| (iovec, m)))
         .collect();
 
+    // Further split the read chunks into smaller subslices that we can iterate
+    // over in parallel.
+
+    /// The size of each subslice in a chunk to be iterated over in parallel
+    const SUBSLICE_SIZE: usize = 8 * 1024 * 1024;
+
+    // Expand chunks into smaller subslices
+    let scan_slices: Vec<(u64, &[u8])> = chunks.iter().flat_map(|(iovec, mem)| {
+        let mut slices = Vec::new();
+        let mut offset = 0;
+        while offset < mem.len() {
+            let end = (offset + SUBSLICE_SIZE).min(mem.len());
+            let base = iovec.base + offset as u64;
+            slices.push((base, &mem[offset..end]));
+            offset = end;
+        }
+        slices
+    }).collect();
+
     // Shared matches vector with interior mutability
     let results = Arc::new(Mutex::new(Vec::new()));
 
-    // Parallel iteration over chunks
-    chunks.par_iter().for_each(|(iovec, mem)| {
+    // Parallel iteration over chunk subslices
+    scan_slices.par_iter().for_each(|(base, mem)| {
         let mut local_results = Vec::new();
-
-        // Local copy of the value
         let mut v = value;
 
         for (offset, chunk) in mem.chunks_exact(v.bytes()).enumerate() {
@@ -122,7 +139,7 @@ pub fn scan_batch(
 
             // Check constraints
             if constraints.iter().all(|x| x.check(v)) {
-                let abs = iovec.base + offset as u64 * v.bytes() as u64;
+                let abs = base + offset as u64 * v.bytes() as u64;
                 local_results.push(abs);
             }
         }

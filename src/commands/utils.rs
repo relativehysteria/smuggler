@@ -117,12 +117,14 @@ pub fn scan_batch(
     let scan_slices: Vec<(u64, &[u8])> = chunks.iter().flat_map(|(iovec, mem)| {
         let mut slices = Vec::new();
         let mut offset = 0;
+
         while offset < mem.len() {
             let end = (offset + SUBSLICE_SIZE).min(mem.len());
             let base = iovec.base + offset as u64;
             slices.push((base, &mem[offset..end]));
             offset = end;
         }
+
         slices
     }).collect();
 

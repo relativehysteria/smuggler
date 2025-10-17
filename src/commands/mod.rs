@@ -13,6 +13,7 @@ use crate::Scanner;
 
 mod utils;
 pub use utils::*;
+pub use display::DEFAULT_BYTES;
 
 // COMMAND REGISTRATION ────────────────────────────────────────────────────────
 // Things are imported using this macro to automatically expose command

@@ -55,8 +55,8 @@ pub fn print_and_save_results(s: &mut Scanner, results: Vec<u64>) {
 }
 
 
-/// Print `num` `results` to the screen, showing possibly pointers mapped to a
-/// file (possibly static) in a different color
+/// Print `num` `results` to the screen, showing pointers pointing to a mapped
+/// file (i.e. possibly static pointers) in a different color
 pub fn print_results(pid: crate::Pid, results: &[u64], num: usize) {
     if num == 0 { return; }
 

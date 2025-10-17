@@ -59,7 +59,6 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
             let base = (i + 1 - vals_per_line) * bytes_per_value;
             let ascii_slice = &mem[base..mem.len().min(base + VALUES_PER_LINE)];
             print_ascii(ascii_slice);
-            println!();
 
             // If more values remain, print the next address header
             if i + 1 != total_values {
@@ -80,7 +79,6 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
         let width = pad_len / bytes_per_value * (value.display() + 1);
         print!("{:width$}", "");
         print_ascii(ascii_slice);
-        println!();
     }
 
     Ok(())
@@ -116,6 +114,7 @@ fn print_ascii(slice: &[u8]) {
         let c = if b.is_ascii_graphic() { b as char } else { '.' };
         print!("{c}");
     }
+    println!();
 }
 
 /// Prints the colored address header.

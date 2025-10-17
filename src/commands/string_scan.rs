@@ -3,7 +3,7 @@ use crate::commands::parse_arg;
 
 crate::register_command_handler!(
     handler, ["ss", "ss16", "ss32"],
-    "Search for a string (or a UTF-16 or UTF-32 wide string)",
+    "Search for a string (or a UTF-16/UTF-32 LE wide string)",
 r#"`<start_address> <end_address> <string>`
 * `start_address` - Start searching from this address. If this is `0`, the
    search will start from the first readable memory region.
@@ -28,26 +28,18 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
         .ok_or("String missing!")?;
 
     // Encode the string depending on the command we're handling
-    let cmd = args[0];
-    let needle = if cmd.ends_with("16") {
-        let mut buf = Vec::with_capacity(string.len() * 2);
-        for unit in string.encode_utf16() {
-            buf.push((unit & 0xFF) as u8);
-            buf.push((unit >> 8) as u8);
-        }
-        buf
-    } else if cmd.ends_with("32") {
-        let mut buf = Vec::with_capacity(string.len() * 4);
-        for ch in string.chars() {
-            let val = ch as u32;
-            buf.push((val & 0xFF) as u8);
-            buf.push(((val >>  8) & 0xFF) as u8);
-            buf.push(((val >> 16) & 0xFF) as u8);
-            buf.push(((val >> 24) & 0xFF) as u8);
-        }
-        buf
-    } else {
-        string.as_bytes().to_vec()
+    let needle = match args[0] {
+        c if c.ends_with("16") => string
+            .encode_utf16()
+            .flat_map(|unit| unit.to_le_bytes())
+            .collect(),
+
+        c if c.ends_with("32") => string
+            .chars()
+            .flat_map(|ch| (ch as u32).to_le_bytes())
+            .collect(),
+
+        _ => string.as_bytes().to_vec(),
     };
 
     // Get the memory map

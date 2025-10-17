@@ -2,8 +2,8 @@ use memchr::memmem;
 use crate::commands::parse_arg;
 
 crate::register_command_handler!(
-    handler, ["ss"],
-    "Search for a string.",
+    handler, ["ss", "ss16", "ss32"],
+    "Search for a string (or a UTF-16 or UTF-32 wide string)",
 r#"`<start_address> <end_address> <string>`
 * `start_address` - Start searching from this address. If this is `0`, the
    search will start from the first readable memory region.
@@ -27,6 +27,29 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
         .map(|parts| parts.join(" "))
         .ok_or("String missing!")?;
 
+    // Encode the string depending on the command we're handling
+    let cmd = args[0];
+    let needle = if cmd.ends_with("16") {
+        let mut buf = Vec::with_capacity(string.len() * 2);
+        for unit in string.encode_utf16() {
+            buf.push((unit & 0xFF) as u8);
+            buf.push((unit >> 8) as u8);
+        }
+        buf
+    } else if cmd.ends_with("32") {
+        let mut buf = Vec::with_capacity(string.len() * 4);
+        for ch in string.chars() {
+            let val = ch as u32;
+            buf.push((val & 0xFF) as u8);
+            buf.push(((val >>  8) & 0xFF) as u8);
+            buf.push(((val >> 16) & 0xFF) as u8);
+            buf.push(((val >> 24) & 0xFF) as u8);
+        }
+        buf
+    } else {
+        string.as_bytes().to_vec()
+    };
+
     // Get the memory map
     let maps = crate::proc_maps::Maps::interesting_regions(s.pid())
         .map_err(|e| format!("Couldn't parse memory map: {:?}", e))?;
@@ -36,7 +59,6 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
 
     // Search for the string and save off the adresses where it's found
     let mut matches = Vec::new();
-    let needle = string.as_bytes();
 
     for batch in iovecs.into_iter() {
         // Read the memory
@@ -49,7 +71,7 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
 
         // Go through each region and scan for the string
         for (iovec, mem) in chunks {
-            for offset in memmem::find_iter(&mem, needle) {
+            for offset in memmem::find_iter(&mem, &needle) {
                 let absolute = iovec.base + offset as u64;
                 matches.push(absolute);
             }

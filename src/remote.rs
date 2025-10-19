@@ -66,8 +66,12 @@ pub fn read(pid: Pid, addr: u64, len: NonZero<usize>) -> Option<Vec<u8>> {
 ///
 /// If a region is invalid, it's skipped, and the function retries with
 /// the remaining valid regions.
+///
+/// Will panic if no remote iovecs are provided or if more than
+/// [`crate::IOV_MAX`] are provided.
 pub fn read_vecs(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
     assert!(remote.len() > 0);
+    assert!(*crate::IOV_MAX.get().unwrap() >= remote.len());
 
     // Allocate local buffers matching each remote region
     let mut backing_vecs: Vec<Vec<u8>> = remote.iter()

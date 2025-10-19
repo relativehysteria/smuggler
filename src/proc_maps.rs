@@ -238,9 +238,13 @@ impl Maps {
         Self::regions(pid, |_| true)
     }
 
-    /// Returns an iterator over groups of IoVecs where each group fits within
-    /// [`CHUNK_SIZE`] bytes and lies within `range`.
+    /// Returns an iterator over groups of `IoVec`s where each group fits within
+    /// [`CHUNK_SIZE`] bytes, lies within `range` and has at most
+    /// [`crate::IOV_MAX`] elements.
     pub fn chunks(self, range: Range<u64>) -> impl Iterator<Item = Vec<IoVec>> {
+        // Get the maximum amount of iovecs we can put into a single chunk
+        let iov_max = *crate::IOV_MAX.get().unwrap();
+
         let mut regions: Vec<Range<u64>> = self.0.into_iter()
             .map(|r| {
                 let start = r.addr.start.max(range.start);
@@ -256,6 +260,12 @@ impl Maps {
             let mut remaining = CHUNK_SIZE as u64;
 
             while let Some(region) = regions.first_mut() {
+                // Stop adding if we've reached the maximum number of vectors
+                if batch.len() >= iov_max {
+                    break;
+                }
+
+                // Filter out zero-length regions
                 let region_len = region.end - region.start;
                 if region_len == 0 {
                     regions.remove(0);

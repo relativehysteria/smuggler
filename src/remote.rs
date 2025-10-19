@@ -112,7 +112,8 @@ pub fn read_vecs(pid: Pid, remote: &[IoVec]) -> Vec<Option<Vec<u8>>> {
             if current_idx == remote.len() { break; } else { continue; }
         }
 
-        // Cast just_read to usize as this is now guaranteed positive
+        // Cast just_read to usize as this is now guaranteed positive due to the
+        // check above
         let mut just_read = just_read as usize;
 
         // We got a read!

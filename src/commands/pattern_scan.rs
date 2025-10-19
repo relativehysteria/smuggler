@@ -32,8 +32,11 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     let anchors = Pattern::parse_scored_anchors(args.get(3..))?;
 
     // Get the memory map
-    let maps = crate::proc_maps::Maps::r_regions(s.pid())
+    let mut maps = crate::proc_maps::Maps::r_regions(s.pid())
         .map_err(|e| format!("Couldn't parse memory map: {:?}", e))?;
+
+    // Exclude kernel mappings and stuff
+    maps.0.retain(|reg| reg.is_interesting());
 
     // Get the iovec batches
     let iovecs = maps.chunks(core::ops::Range { start, end });

@@ -88,8 +88,8 @@ impl Region {
     /// Checks whether this region is "interesting" enough for the scanner to
     /// scan
     fn is_interesting(&self) -> bool {
-        // Must be readable and writable
-        if !(self.perms.read && self.perms.write) { return false; }
+        // Must be readable
+        if !self.perms.read { return false; }
 
         // Exclude obvious kernel / helper mappings
         if let Some(ref name) = self.path {

@@ -39,6 +39,9 @@ pub fn print_and_save_results(s: &mut Scanner, results: Vec<u64>) {
     if results.is_empty() {
         println!("No results.");
     } else {
+        // Print the history index first
+        print!("({}) ", s.results.len() + 1);
+
         if results.len() > 10 {
             println!("Found {} results.", results.len());
         } else if results.len() == 1 {
@@ -50,7 +53,7 @@ pub fn print_and_save_results(s: &mut Scanner, results: Vec<u64>) {
         }
 
         // Save the results
-        s.results = results;
+        s.results.push(results);
     }
 }
 

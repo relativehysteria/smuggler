@@ -21,8 +21,8 @@ pub struct Scanner {
     /// The PID we want to scan
     pid: Pid,
 
-    /// Results of a previous scan
-    pub results: Vec<u64>,
+    /// History of results
+    pub results: Vec<Vec<u64>>,
 }
 
 impl Scanner {

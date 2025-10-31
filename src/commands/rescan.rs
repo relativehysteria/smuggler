@@ -12,12 +12,13 @@ r#"`<id> <constraints>`
 );
 
 fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
-    // Parse the value type
+    // Parse the value type and the constraints
     let value = parse_value(args.get(0))?;
 
-    // Parse the history entry whose results will be used for this scan and
-    // normalize the index to 0-based, using the last index when the input is 0
+    // Parse the history entry whose results will be used for this scan.
     let idx = parse_arg::<usize>(args.get(1), "History index")?;
+
+    // Normalize the index to 0-based, using the last index when the input is 0
     let idx = idx.checked_sub(1).unwrap_or(s.results.len().saturating_sub(1));
 
     // Parse the constraints

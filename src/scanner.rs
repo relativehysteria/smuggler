@@ -3,6 +3,7 @@
 //! Keeps track of all allocations and history and stuff
 
 use std::sync::OnceLock;
+use std::collections::VecDeque;
 use crate::Pid;
 
 /// The amount of memory to read in a single go when scanning
@@ -21,8 +22,8 @@ pub struct Scanner {
     /// The PID we want to scan
     pid: Pid,
 
-    /// Results of a previous scan
-    pub results: Vec<u64>,
+    /// Results of the last 2 scans
+    pub results: VecDeque<Vec<u64>>,
 }
 
 impl Scanner {
@@ -37,7 +38,7 @@ impl Scanner {
             let _ = IOV_MAX.set(usize::try_from(val).unwrap());
         }
 
-        Self { pid, results: Vec::new(), }
+        Self { pid, results: VecDeque::with_capacity(2), }
     }
 
     /// Get the PID of the scanned process

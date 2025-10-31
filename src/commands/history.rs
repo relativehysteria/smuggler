@@ -15,7 +15,9 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     let n_show = if n_show == 0 { usize::MAX } else { n_show };
 
     // Show the addresses
-    crate::commands::print_results(s.pid(), &s.results, n_show);
+    if let Some(results) = s.results.back() {
+        crate::commands::print_results(s.pid(), results, n_show);
+    }
 
     Ok(())
 }

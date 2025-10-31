@@ -50,10 +50,12 @@ pub fn print_and_save_results(s: &mut Scanner, results: Vec<u64>) {
         }
 
         // Save the results
-        s.results = results;
+        if s.results.len() == 2 {
+            s.results.pop_front();
+        }
+        s.results.push_back(results);
     }
 }
-
 
 /// Print `num` `results` to the screen, showing pointers pointing to a mapped
 /// file (i.e. possibly static pointers) in a different color

@@ -16,9 +16,12 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     // Parse the constraints
     let constraints = parse_constraints(&args[1..], value)?;
 
-    // Create iovecs for the addresses returned by the previous scan
+    // Get the results from the last scan
+    let Some(results) = s.results.back() else { return Ok(()); };
+
+    // Create iovecs for the addresses returned by the last scan
     let bytes = core::num::NonZero::new(value.bytes()).unwrap();
-    let iovecs: Vec<IoVec> = s.results.iter()
+    let iovecs: Vec<IoVec> = results.iter()
         .map(|&addr| IoVec::new(addr, bytes))
         .collect();
 

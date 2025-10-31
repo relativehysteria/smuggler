@@ -34,6 +34,7 @@ import_command!(pattern_scan);
 import_command!(scan);
 import_command!(rescan);
 import_command!(history);
+import_command!(diff);
 import_command!(region);
 
 // ─────────────────────────────────────────────────────────────────────────────

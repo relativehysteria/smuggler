@@ -28,7 +28,14 @@ fn handler(s: &mut crate::Scanner, args: &[&str]) -> crate::commands::Result {
     // Search for the values and save off the adresses where they're found
     let mut matches = Vec::new();
 
-    for batch in iovecs.chunks(CHUNK_SIZE / value.bytes()) {
+    // Initial scans use `Maps::chunks()`, which enforces both CHUNK_SIZE and
+    // IOV_MAX. Rescans construct iovecs directly, so we must re-apply the
+    // IOV_MAX bound here to avoid panics due to invalid `read_vecs()` calls.
+    let max_iovecs = *crate::IOV_MAX.get().unwrap();
+    let max_by_bytes = CHUNK_SIZE / value.bytes();
+    let batch_size = max_iovecs.min(max_by_bytes);
+
+    for batch in iovecs.chunks(batch_size) {
         scan_batch(s.pid(), &mut matches, batch, value, &constraints);
     }
 

@@ -3,7 +3,7 @@ use crate::{CHUNK_SIZE, remote::IoVec};
 
 crate::register_command_handler!(
     handler, ["ub", "uw", "ud", "uq", "uB", "uW", "uD", "uQ", "uf", "uF"],
-    "Rescan the resutls from previous scan for new values.",
+    "Rescan the results from previous scan for new values.",
 r#"`<constraints>`
 * `constraints` - The constraints by which to scan
 "#

@@ -5,7 +5,7 @@ A modular Cheat Engine inspired CLI memory scanner.
 Currently Smuggler only supports read operations (it is merely a scanner), but
 the command system is modular and implementing new commands is as simple as
 writing a handler and registering it with
-[`register_command_handler!()`](src/commands/mod.rs#71). :)
+[`register_command_handler!()`](src/commands/mod.rs#L71). :)
 
 # Expressions
 
@@ -48,7 +48,7 @@ Constraints may be any one of the following:
 # Commands
 
 Commands are registered with the
-[`register_command_handler!()`](src/commands/mod.rs#71) macro which requires
+[`register_command_handler!()`](src/commands/mod.rs#L71) macro which requires
 each handler to have a description and argument list. This macro generates the
 documentation for each registered handler, thus the most up-to-date
 docs can be simply generated with `cargo doc`. 

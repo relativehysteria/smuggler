@@ -87,7 +87,7 @@ validate/verify) useful pointers:
 # Scan heuristics
 
 The scan commands use several _simple_ heuristics to optimize performance and
-reduce noise when searching process memory (this is __note__ the case for IDA
+reduce noise when searching process memory (this is __not__ the case for IDA
 byte pattern scanning which scans _all readable memory_). As such, some regions
 that are unlikely to contain user data are filtered out when scanning:
 * Kernel mappings: `[vvar]`, `[vdso]`, `[vsyscall]`
